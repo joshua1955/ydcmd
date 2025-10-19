@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 __title__    = "ydcmd"
-__version__  = "2.12.2"
-__author__   = "Anton Batenev"
+__version__  = "2.13.1"
+__author__   = "A K"
 __license__  = "BSD"
 
 
@@ -272,6 +272,9 @@ class ydHTTPSConnection(ydHTTPSConnectionBase):
                 context.load_verify_locations(self._options.cafile)
                 context.verify_mode    = ssl.CERT_REQUIRED
                 context.check_hostname = True
+            else:
+                context.check_hostname = False
+                context.verify_mode    = ssl.CERT_NONE
 
             context.options |= ssl.OP_NO_SSLv2
             context.options |= ssl.OP_NO_SSLv3
@@ -288,6 +291,10 @@ class ydHTTPSConnection(ydHTTPSConnectionBase):
                 kwargs.update (
                     cert_reqs = ssl.CERT_REQUIRED,
                     ca_certs  = self._options.cafile
+                )
+            else:
+                kwargs.update (
+                    cert_reqs = ssl.CERT_NONE
                 )
 
             if self._options.ciphers != None and YD_WRAP_SOCKET_CIPHERS:
@@ -485,7 +492,7 @@ def yd_default_config():
         "threads"          : "0",
         "progress"         : "no",
         "iconv"            : "",
-        "base-url"         : "https://cloud-api.yandex.net/v1/disk",
+        "base-url"         : "https://cloud-api.yandex.com/v1/disk",
         "app-id"           : "2415aa2e6ceb4839b1202e15ac83536c",
         "app-secret"       : "b8ae32ce025c451f84bd7df17029cb55",
         "ca-file"          : "",
@@ -799,11 +806,15 @@ def yd_headers(token):
     Результат (dict):
         Заголовки по умолчанию для передачи в запросе к API
     """
-    return {
+    headers = {
         "Accept"        : "application/json",
-        "User-Agent"    : "{0}/{1}".format(__title__, __version__),
-        "Authorization" : "OAuth {0}".format(token)
+        "User-Agent"    : "{0}/{1}".format(__title__, __version__)
     }
+    
+    if token and token.strip():
+        headers["Authorization"] = "OAuth {0}".format(token)
+    
+    return headers
 
 
 def yd_query_download(options, response, target):
@@ -919,7 +930,7 @@ def yd_query_retry(options, method, url, args, headers = None, target = None, da
                     return dict([(_json_convert(key), _json_convert(value)) for key, value in iteritems(input)])
                 elif isinstance(input, list):
                     return [_json_convert(element) for element in input]
-                elif isinstance(input, unicode):
+                elif isinstance(input, str) and sys.version_info < (3, 0):
                     return input.encode("utf-8")
                 else:
                     return input
@@ -931,7 +942,7 @@ def yd_query_retry(options, method, url, args, headers = None, target = None, da
 
     except ydHTTPError as e:
         try:
-            result = json.load(e)
+            result = json.load(codecs.getreader("utf-8")(e))
 
             if "description" in result:
                 errmsg = "HTTP-{0}: {1}".format(e.code, result["description"])
@@ -963,6 +974,9 @@ def yd_query(options, method, url, args, headers = None, target = None, data = N
     """
     Реализация нескольких попыток запроса к API (yd_query_retry)
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     retry = 0
     while True:
         try:
@@ -986,6 +1000,9 @@ def yd_wait(options, link):
     """
     if options.async_d or not ("href" in link and "method" in link):
         return
+
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
 
     url    = link["href"]
     method = link["method"]
@@ -1015,6 +1032,9 @@ def yd_info(options):
     Результат (dict):
         Метаинформация о хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     method = "GET"
     url    = options.baseurl + "/"
 
@@ -1033,6 +1053,9 @@ def yd_stat(options, path, silent = False):
     Результат (ydItem):
         Метаинформация об объекте в хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     args = {
         "path"   : path,
         "offset" : 0,
@@ -1064,6 +1087,9 @@ def yd_patch(options, path, info):
         path    (str)       -- Имя файла или директории в хранилище
         info    (dict)      -- Метаинформация (без custom_properties)
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Patch: {0}".format(path), options.verbose)
 
     args = {
@@ -1092,6 +1118,9 @@ def yd_list(options, path):
     Результат (dict):
         Список имен объектов и метаинформации о них { "имя" : ydItem }
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     result = {}
 
     args = {
@@ -1136,6 +1165,9 @@ def yd_last(options, limit):
     Результат (dict):
         Список имен объектов и метаинформации о них { "путь" : ydItem }
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     result = {}
 
     args = None
@@ -1166,6 +1198,9 @@ def yd_delete(options, path, silent = False):
         path    (str)       -- Объект хранилища
         silent  (bool)      -- Игнорировать ошибку, если объект (уже/еще?) не существует
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Delete: {0}".format(path), options.verbose)
 
     args = {
@@ -1195,6 +1230,9 @@ def yd_copy(options, source, target):
         source  (str)       -- Исходный объект хранилища
         target  (str)       -- Конечный объект хранилища
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Copy: {0} -> {1}".format(source, target), options.verbose)
 
     args = {
@@ -1220,6 +1258,9 @@ def yd_move(options, source, target):
         source  (str)       -- Исходный объект хранилища
         target  (str)       -- Конечный объект хранилища
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Move: {0} -> {1}".format(source, target), options.verbose)
 
     args = {
@@ -1245,6 +1286,9 @@ def yd_create(options, path, silent = False):
         path    (str)       -- Имя директории в хранилище
         silent  (bool)      -- Игноририровать ошибку, если директория (уже/еще?) существует
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Create: {0}".format(path), options.verbose)
 
     args = {
@@ -1273,6 +1317,9 @@ def yd_publish(options, path):
     Результат (ydItem):
         Метаинформация об объекте в хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Publish: {0}".format(path), options.verbose)
 
     args = {
@@ -1302,6 +1349,9 @@ def yd_unpublish(options, path):
         options (ydOptions) -- Опции приложения
         path    (str)       -- Имя файла или директории в хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Unpublish: {0}".format(path), options.verbose)
 
     args = {
@@ -1323,6 +1373,9 @@ def yd_restore(options, path, name = None):
         path    (str)       -- Объект в корзине
         name    (str)       -- Новое имя восстанавливаемого ресурса
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if name:
         yd_verbose("Restore: {0} as {1}".format(path, name), options.verbose)
     else:
@@ -1353,6 +1406,9 @@ def yd_download(options, source, target):
         source  (str)       -- URL исходного объекта
         target  (str)       -- Конечный объект хранилища
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Download: {0} -> {1}".format(source, target), options.verbose)
 
     args = {
@@ -1380,6 +1436,9 @@ def yd_put_retry(options, source, target):
         source  (str)       -- Имя локального файла
         target  (str)       -- Имя файла в хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     args = {
         "path"      : target,
         "overwrite" : "true"
@@ -1407,6 +1466,9 @@ def yd_put(options, source, target):
     """
     Реализация нескольких попыток загрузки файла в хранилище (yd_put_retry)
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_verbose("Transfer: {0} ({1}) -> {2}".format(source, yd_human(os.path.getsize(source)), target), options.verbose)
 
     retry = 0
@@ -1432,6 +1494,9 @@ def yd_get_retry(options, source, target):
         source  (str)       -- Имя файла в хранилище
         target  (str|file)  -- Имя локального файла или описатель файла
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     args = {
         "path" : source
     }
@@ -1457,6 +1522,9 @@ def yd_get(options, source, target):
     """
     Реализация нескольких попыток получения файла из хранилища (yd_get_retry)
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if isinstance(target, string_types):
         yd_verbose("Transfer: {0} -> {1}".format(source, target), options.verbose)
     else:
@@ -1480,6 +1548,9 @@ def yd_cat(options, source):
     """
     Реализация нескольких попыток получения файла из хранилища и вывод его в stdout
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     yd_get(options, source, sys.stdout)
 
 
@@ -1546,6 +1617,9 @@ def yd_ensure_remote(options, path, type, stat, recursion):
     Результат (ydItem):
         Метаинформация об объекте, если он уже существует и его тип совпадает с аргументом type.
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if not (type == "dir" or type == "file"):
         raise ValueError("Unsupported type: {}".format(type))
 
@@ -1586,6 +1660,9 @@ def yd_put_file(options, source, target, stat = None):
         target  (str)       -- Имя файла хранилище
         stat    (ydItem)    -- Описатель файла в хранилище (None, если файл отсутствует)
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if stat:
         stat = yd_ensure_remote(options, target, "file", stat, False)
     if not (stat and stat.isfile() and os.path.getsize(source) == stat.size and yd_check_hash(options, source, stat.md5, stat.sha256)):
@@ -1622,6 +1699,9 @@ def yd_put_sync(options, source, target, pool = None):
         target  (str)       -- Имя директории в хранилище (со слешем)
         pool    (ydPool)    -- Пул процессов
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if options.exclude_tag and os.path.isfile(source + options.exclude_tag):
         return
 
@@ -1698,7 +1778,7 @@ def yd_put_sync(options, source, target, pool = None):
 def yd_ensure_local(options, path, type):
     """
     Метод проверки возможности создания локального объекта требуемого типа.
-    Если объект уже существует и типы не совпадают, производится удаление объекта.
+    Если предыдущий объект уже существует и типы не совпадают, производится удаление объекта.
     Если требуемый тип является директорией, то в случае ее отсутствия производится ее создание.
 
     Аргументы:
@@ -1751,6 +1831,9 @@ def yd_get_file(options, source, target, stat):
         target  (str)       -- Имя локального файла
         stat    (ydItem)    -- Описатель файла в хранилище
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     exists = yd_ensure_local(options, target, "file")
     if not exists or not (os.path.getsize(target) == stat.size and yd_check_hash(options, target, stat.md5, stat.sha256)):
         yd_get(options, source, target)
@@ -1766,6 +1849,9 @@ def yd_get_sync(options, source, target, pool = None):
         target  (str)       -- Имя локальной директории (со слешем)
         pool    (ydPool)    -- Пул процессов
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     flist = yd_list(options, source)
 
     lazy_get_sync = []
@@ -1836,6 +1922,9 @@ def yd_du(options, path, depth = 0):
     Результат (list):
         Список [(имя, размер)] объектов
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     size   = 0
     result = []
 
@@ -1863,6 +1952,9 @@ def yd_clean(options, path):
         options (ydOptions) -- Опции приложения
         path    (str)       -- Путь
     """
+    if not options.token or not options.token.strip():
+        raise ydError(401, "OAuth token is required")
+    
     if options.keep == "" or options.type not in ["all", "file", "dir"]:
         return
 
@@ -2404,9 +2496,12 @@ def yd_token_cmd(options, args):
 
     del headers["Authorization"]
 
-    result = yd_query_retry(options, method, url, None, headers, None, data)
-
-    yd_print("OAuth token is: {0}".format(result["access_token"]))
+    try:
+        result = yd_query_retry(options, method, url, None, headers, None, data)
+        yd_print("OAuth token is: {0}".format(result["access_token"]))
+    except ydError as e:
+        yd_print("Error getting OAuth token: {0}".format(e.errmsg))
+        raise
 
 
 def yd_print_usage(cmd = None):
