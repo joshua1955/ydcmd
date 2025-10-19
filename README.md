@@ -1,8 +1,10 @@
 # ydcmd
 
-[English](https://github.com/abbat/ydcmd/blob/master/README.en.md) | [Türk](https://github.com/abbat/ydcmd/blob/master/README.tr.md)
+[English](README.en.md)
 
-Консольный клиент Linux/FreeBSD для работы с облачным хранилищем [Яндекс.Диск](https://disk.yandex.ru/) посредством [REST API](https://yandex.ru/dev/disk-api/doc/ru/).
+Консольный клиент для работы с облачным хранилищем Яндекс.Диск посредством REST API.
+
+> **Это форк проекта от [abbat](https://github.com/abbat/ydcmd)**
 
 ## ⚠️ Важные изменения в этой версии
 
@@ -21,45 +23,44 @@
 - ✅ Корректная обработка OAuth токенов
 - ✅ Стабильная работа на Windows/Linux/macOS
 
-## Загрузка / Установка
+## Установка
 
-* [deb / rpm](http://software.opensuse.org/download.html?project=home:antonbatenev:ydcmd&package=ydcmd)
-* [Ubuntu PPA](https://launchpad.net/~abbat/+archive/ubuntu/ydcmd) - `ppa:abbat/ydcmd`
-* [Arch AUR](https://aur.archlinux.org/packages/ydcmd/) (см. так же [AUR Helpers](https://wiki.archlinux.org/index.php/AUR_Helpers_(Русский)))
-* Из исходного кода:
+Из исходного кода:
 
-```
-$ git clone https://github.com/abbat/ydcmd.git
-$ sudo cp ydcmd/ydcmd.py /usr/local/bin/ydcmd
+```bash
+git clone https://github.com/joshua1955/ydcmd.git
+cd ydcmd
+sudo cp ydcmd.py /usr/local/bin/ydcmd
 ```
 
 ## Как можно помочь
 
-* Переведите этот документ или [man-страницу](https://github.com/abbat/ydcmd/blob/master/man/ydcmd.ru.1) на свой родной язык;
-* Исправляйте ошибки в этом документе или man-странице для своего родного языка;
-* Делитесь информацией со своими друзьями;
-* Отправляйте PR если вы разработчик.
+* Переведите этот документ на свой родной язык
+* Исправляйте ошибки в документации
+* Делитесь информацией со своими друзьями
+* Отправляйте PR если вы разработчик
 
 ## Подготовка к работе
 
-Для работы клиента необходимо получить OAuth токен. **Рекомендуемый способ** - использовать встроенную команду:
+Для работы клиента необходимо получить OAuth токен. **Простой способ** - использовать встроенную команду:
 
 ```bash
 python ydcmd.py token
 ```
 
-Команда выведет ссылку для авторизации. Перейдите по ней в браузере, разрешите доступ и скопируйте полученный код. Затем выполните:
+Команда выведет красивую инструкцию и ссылку для авторизации. Просто:
 
-```bash
-python ydcmd.py token <полученный_код>
-```
+1. Перейдите по ссылке в браузере
+2. Разрешите доступ приложению
+3. Скопируйте код авторизации со страницы
+4. Вставьте его в терминал и нажмите Enter
 
-Приложение выведет OAuth токен, который нужно добавить в конфигурационный файл `~/.ydcmd.cfg`:
+Скрипт автоматически:
+- ✅ Получит OAuth токен
+- ✅ Создаст или обновит файл конфигурации `~/.ydcmd.cfg`
+- ✅ Сохранит токен в безопасном формате
 
-```ini
-[ydcmd]
-token = ваш_токен_здесь
-```
+После этого вы сразу сможете использовать все команды ydcmd!
 
 ### Альтернативный способ (регистрация собственного приложения):
 

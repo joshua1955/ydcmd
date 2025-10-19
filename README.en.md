@@ -1,53 +1,75 @@
-:warning: EOL
-
----
-
 # ydcmd
 
-[Русский](https://github.com/abbat/ydcmd/blob/master/README.md) | [Türk](https://github.com/abbat/ydcmd/blob/master/README.tr.md)
+Console client for working with Yandex.Disk cloud storage via REST API.
 
-Linux/FreeBSD command line client for interacting with cloud storage [Yandex.Disk](https://disk.yandex.com/) by means of [REST API](http://api.yandex.com/disk/api/concepts/about.xml).
+> **This is a fork of the project by [abbat](https://github.com/abbat/ydcmd)**
 
-## Download / Install
+## ⚠️ Important changes in this version
 
-* [deb / rpm](http://software.opensuse.org/download.html?project=home:antonbatenev:ydcmd&package=ydcmd)
-* [Ubuntu PPA](https://launchpad.net/~abbat/+archive/ubuntu/ydcmd) - `ppa:abbat/ydcmd`
-* [Arch AUR](https://aur.archlinux.org/packages/ydcmd/) (see also [AUR Helpers](https://wiki.archlinux.org/index.php/AUR_Helpers))
-* From source code:
+**Updated to work with current Yandex.Disk API (2024)**
 
+### 🔧 Key fixes:
+- **Updated base API URL**: `cloud-api.yandex.net` → `cloud-api.yandex.com`
+- **Fixed Python 3 compatibility**: resolved unicode and JSON issues
+- **Improved OAuth token handling**: added token validation
+- **Fixed SSL work**: added support for working without certificate verification
+- **Improved error handling**: more informative error messages
+
+### 🚀 Result:
+- ✅ Full compatibility with current Yandex.Disk API
+- ✅ Works with Python 2.7+ and Python 3.x
+- ✅ Correct OAuth token handling
+- ✅ Stable operation on Windows/Linux/macOS
+
+## Installation
+
+From source code:
+
+```bash
+git clone https://github.com/your-username/ydcmd.git
+cd ydcmd
+sudo cp ydcmd.py /usr/local/bin/ydcmd
 ```
-$ git clone https://github.com/abbat/ydcmd.git
-$ sudo cp ydcmd/ydcmd.py /usr/local/bin/ydcmd
+
+## How you can help
+
+* Translate this document to your native language
+* Fix errors in documentation
+* Share information with your friends
+* Submit PR if you are a developer
+
+## Setup
+
+To work with the client, you need to obtain an OAuth token. **Simple method** - use the built-in command:
+
+```bash
+python ydcmd.py token
 ```
 
-## How to help
+The command will output a beautiful instruction and authorization link. Simply:
 
-* Translate this document or [man page](https://github.com/abbat/ydcmd/blob/master/man/ydcmd.1) to your native language;
-* Proofreading README.md or man page with your native language;
-* Share, Like, RT to your friends;
-* Send PRs if you are developer.
+1. Follow the link in your browser
+2. Grant access to the application
+3. Copy the authorization code from the page
+4. Paste it in the terminal and press Enter
 
-## Pre-starting procedure
+The script will automatically:
+- ✅ Get OAuth token
+- ✅ Create or update configuration file `~/.ydcmd.cfg`
+- ✅ Save token in secure format
 
-To run the client you need a OAuth token. To obtain one run `ydcmd token` command or [register the application on Yandex](https://oauth.yandex.com/client/new):
+After that you can immediately use all ydcmd commands!
 
-* `Name` - `ydcmd` (can be arbitrary)
-* `Permissions` - `Yandex.Disk REST API`
-* `Client for development` - select check box
+### Alternative method (registering your own application):
 
-After registering the application, copy `application id` and follow the next link:
+1. Register an application on Yandex
+2. Set permissions: `Yandex.Disk REST API`
+3. Enable `Development client`
+4. Use the received `client_id` for authorization
 
-* `https://oauth.yandex.com/authorize?response_type=token&client_id=<id_application>`
+## Usage
 
-After granting access, service will redirect you to the link of the following form:
-
-* `https://oauth.yandex.com/verification_code?dev=True#access_token=<token>`
-
-Value "token" is the required one. For more info please follow the link [manually obtaining a debugging token](http://api.yandex.com/oauth/doc/dg/tasks/get-oauth-token.xml).
-
-## Running
-
-You can access help (brief info) within the command line by running a script with no parameters or by entering `help` command. The general invocation format:
+You can get brief help in the console by running the script without parameters or with the `help` command. General call format:
 
 ```
 ydcmd [command] [options] [arguments]
@@ -55,43 +77,43 @@ ydcmd [command] [options] [arguments]
 
 **Commands**:
 
-* `help` - returns brief info on application's commands and options;
-* `ls` - returns a list of files and directories;
-* `rm` - deletes a file or directory;
-* `cp` - copies a file or directory;
-* `mv` - moves a file or directory;
-* `put` - uploads a file or directory into the storage;
-* `get` - retrieves a file or directory from the storage;
-* `cat` - display a file from the storage to stdout;
-* `mkdir` - creates a directory;
-* `stat` - returns meta-information about an object;
-* `info` - returns meta-information about a storage;
-* `last` - returns meta-information about last uploaded files;
-* `share` - publish uploaded object (obtaining direct link);
-* `revoke` - unpublish uploaded object;
-* `du` - evaluates the disk space used by files within the storage;
-* `clean` - cleans files and directories;
-* `restore` - restores file or directory from trash;
+* `help` - get brief help on commands and application options;
+* `ls` - get list of files and directories;
+* `rm` - delete file or directory;
+* `cp` - copy file or directory;
+* `mv` - move file or directory;
+* `put` - upload file or directory to storage;
+* `get` - get file or directory from storage;
+* `cat` - output file from storage to stdout;
+* `mkdir` - create directory;
+* `stat` - get metadata about object;
+* `info` - get metadata about storage;
+* `last` - get metadata about last uploaded files;
+* `share` - publish object (get direct link);
+* `revoke` - close access to previously published object;
+* `du` - estimate space occupied by files in storage;
+* `clean` - clean files and directories;
+* `restore` - restore file or directory from trash;
 * `download` - download file from internet to storage;
-* `token` - get oauth token for application.
+* `token` - get oauth token for application work.
 
 **Options**:
 
-* `--config=<S>` - config filename (if not default);
-* `--timeout=<N>` - timeout (in seconds) for establishing a network connection;
-* `--retries=<N>` - number of attempts of API method invocation before returning an error code;
-* `--delay=<N>` - timeout (in seconds) between attempts of API method invocation;
-* `--limit=<N>` - the number of items returned after a single invocation of a method for obtaining a list of files and directories;
-* `--token=<S>` - oauth token (for security purposes, should be specified in the configuration file or through an environment variable `YDCMD_TOKEN`);
-* `--quiet` - error output suppression, return code determines a successful operation result;
-* `--verbose` - returns expanded information;
-* `--debug` - returns debug information;
-* `--chunk=<N>` - data block size (in KB) for I/O operations;
-* `--ca-file=<S>` - file name with certificates of trusted certification authorities (if the value is null, certificate validation is not performed);
-* `--ciphers=<S>` - set of encryption algorithms (see [ciphers(1)](https://www.openssl.org/docs/apps/ciphers.html));
-* `--version` - print version and exit.
+* `--config=<S>` - configuration file name (if different from default file);
+* `--timeout=<N>` - timeout in seconds for establishing network connection;
+* `--retries=<N>` - number of attempts to call api method before returning error code;
+* `--delay=<N>` - timeout between attempts to call api method in seconds;
+* `--limit=<N>` - number of elements returned by one call to get list of files and directories;
+* `--token=<S>` - oauth token (for security reasons, it is recommended to specify in configuration file or through environment variable `YDCMD_TOKEN`);
+* `--quiet` - suppress error output, operation success result is determined by return code;
+* `--verbose` - output extended information;
+* `--debug` - output debug information;
+* `--chunk=<N>` - data block size in KB for input/output operations;
+* `--ca-file=<S>` - name of file with certificates of trusted certification centers (if empty, certificate validity check is not performed);
+* `--ciphers=<S>` - set of encryption algorithms;
+* `--version` - output version and exit.
 
-### Returning a list of files and directories
+### Getting list of files and directories
 
 ```
 ydcmd ls [options] [disk:/object]
@@ -99,13 +121,13 @@ ydcmd ls [options] [disk:/object]
 
 **Options**:
 
-* `--human` - returns file size (in human-readable form);
-* `--short` - returns a list of files and directories without additional information (one name per line);
-* `--long` - returns an extended list (creation time, modification time, size, file name).
+* `--human` - output file size in human-readable format;
+* `--short` - output list of files and directories without additional information (one name per line);
+* `--long` - output extended list (creation time, modification time, size, file name).
 
-If a target object is not specified, then the storage's root directory will be used.
+If target object is not specified, root directory of storage will be used.
 
-### Deleting a file or directory
+### Deleting file or directory
 
 ```
 ydcmd rm <disk:/object>
@@ -113,13 +135,13 @@ ydcmd rm <disk:/object>
 
 **Options**:
 
-* `--trash` - remove to trash folder;
-* `--poll=<N>` - interval (in seconds) between status polls during an asynchronous operation;
-* `--async` - runs a command without waiting for operation to terminate (`poll`).
+* `--trash` - delete to trash;
+* `--poll=<N>` - time in seconds between status polling when performing asynchronous operation;
+* `--async` - execute command without waiting for completion (`poll`) operation.
 
-Files are deleted permanently. Directories are deleted recursively (including sub files and sub directories).
+Files are deleted without possibility of recovery. Directories are deleted recursively (including nested files and directories).
 
-### Copying a file or directory
+### Copying file or directory
 
 ```
 ydcmd cp <disk:/object1> <disk:/object2>
@@ -127,12 +149,12 @@ ydcmd cp <disk:/object1> <disk:/object2>
 
 **Options**:
 
-* `--poll=<N>` - interval (in seconds) between status polls during asynchronous operations;
-* `--async` - runs a command without waiting for operation to terminate (`poll`).
+* `--poll=<N>` - time in seconds between status polling when performing asynchronous operations;
+* `--async` - execute command without waiting for completion (`poll`) operation.
 
-In case of name coincidence, directories and files will be overwritten. Directories are copied recursively (including sub folders and sub directories).
+In case of name collision, directories and files will be overwritten. Directories are copied recursively (including nested files and directories).
 
-### Moving a file or directory
+### Moving file or directory
 
 ```
 ydcmd mv <disk:/object1> <disk:/object2>
@@ -140,12 +162,12 @@ ydcmd mv <disk:/object1> <disk:/object2>
 
 **Options**:
 
-* `--poll=<N>` - interval (in seconds) between status polls during asynchronous operations;
-* `--async` - runs a command without waiting for operation to terminate (`poll`).
+* `--poll=<N>` - time in seconds between status polling when performing asynchronous operations;
+* `--async` - execute command without waiting for completion (`poll`) operation.
 
-In case of name coincidence, directories and files will be overwritten.
+In case of name collision, directories and files will be overwritten.
 
-### Uploading a file into the storage
+### Uploading file to storage
 
 ```
 ydcmd put <file> [disk:/object]
@@ -153,18 +175,18 @@ ydcmd put <file> [disk:/object]
 
 **Options**:
 
-* `--rsync` - synchronizes a tree of files and directories in the storage with a local tree;
-* `--no-recursion` - avoid descending automatically in directories;
-* `--no-recursion-tag=<S>` - avoid descending in directories containing file;
-* `--exclude-tag=<S>` - exclude contents of directories containing file;
+* `--rsync` - synchronize tree of files and directories in storage with local tree;
+* `--no-recursion` - do not upload contents of nested directories;
+* `--no-recursion-tag=<S>` - do not upload contents of nested directories, for directories containing file;
+* `--exclude-tag=<S>` - skip uploading directories containing file;
 * `--skip-hash` - skip md5/sha256 integrity checks;
 * `--threads=<N>` - number of worker processes;
-* `--iconv=<S>` - try to restore file or directory names from the specified encoding if necessary (for example `--iconv=cp1250`);
-* `--progress` - show progress (it is recommended to install python-progressbar module).
+* `--iconv=<S>` - if necessary, try to restore file and directory names from specified encoding (e.g., `--iconv=cp1251`);
+* `--progress` - output operation progress (recommended to install python-progressbar module).
 
-If a target object is not specified, then the storage's root directory will be used for uploading a file. If a target object denotes a directory (ends with `/`), then the source file name will be added to the directory's name. If a target object exists, it will be overwritten without a confirmation prompt. Symbolic links are ignored.
+If target object is not specified, root directory of storage will be used for file upload. If target object points to directory (ends with `/`), source file name will be added to directory name. If target object exists, it will be overwritten without confirmation request. Symbolic links are ignored.
 
-### Retrieving a file from the storage
+### Getting file from storage
 
 ```
 ydcmd get <disk:/object> [file]
@@ -172,35 +194,35 @@ ydcmd get <disk:/object> [file]
 
 **Options**:
 
-* `--rsync` - synchronizes a local tree of files and directories with a tree in the storage;
-* `--no-recursion` - avoid descending automatically in directories;
+* `--rsync` - synchronize local tree of files and directories with tree in storage;
+* `--no-recursion` - do not download contents of nested directories;
 * `--skip-hash` - skip md5/sha256 integrity checks;
 * `--threads=<N>` - number of worker processes;
-* `--progress` - show progress (it is recommended to install python-progressbar module).
+* `--progress` - output operation progress (recommended to install python-progressbar module).
 
-If the target file's name is not specified, the file's name within the storage will be used. If a target object exists, it will be overwritten without a confirmation prompt.
+If target file name is not specified, file name in storage will be used. If target object exists, it will be overwritten without confirmation request.
 
-### Display a file from the storage to stdout
+### Output file from storage to stdout
 
 ```
 ydcmd cat <disk:/object>
 ```
 
-### Creating a directory
+### Creating directory
 
 ```
 ydcmd mkdir <disk:/path>
 ```
 
-### Obtaining meta-information about an object
+### Getting metadata about object
 
 ```
 ydcmd stat [disk:/object]
 ```
 
-If a target object is not specified, then the storage's root directory will be used.
+If target object is not specified, root directory of storage will be used.
 
-### Obtaining meta-information about a storage
+### Getting metadata about storage
 
 ```
 ydcmd info
@@ -208,9 +230,9 @@ ydcmd info
 
 **Options**:
 
-* `--long` - returns sizes in bytes instead of human-readable form.
+* `--long` - display sizes in bytes instead of human-readable format.
 
-### Obtaining meta-information about last uploaded files
+### Getting metadata about last uploaded files
 
 ```
 ydcmd last [N]
@@ -218,27 +240,27 @@ ydcmd last [N]
 
 **Options**:
 
-* `--human` - returns file size (in human-readable form);
-* `--short` - returns a list of files without additional information (one name per line);
-* `--long` - returns an extended list (creation time, modification time, size, file name).
+* `--human` - output file size in human-readable format;
+* `--short` - output list of files without additional information (one name per line);
+* `--long` - output extended list (creation time, modification time, size, file).
 
-If argument N is not specified, default REST API value will be used.
+If parameter N is not set, default value from REST API will be used.
 
-### Publish object
+### Publishing object
 
 ```
 ydcmd share <disk:/object>
 ```
 
-Command returns object path and direct url.
+Command returns object name in storage and link to it.
 
-### Unpublish object
+### Closing access
 
 ```
 ydcmd revoke <disk:/object>
 ```
 
-### Evaluating the disk space used
+### Estimating occupied space
 
 ```
 ydcmd du [disk:/object]
@@ -246,10 +268,10 @@ ydcmd du [disk:/object]
 
 **Options**:
 
-* `--depth=<N>` - returns the sizes of directories up to the level N;
-* `--long` - returns sizes in bytes instead of human-readable form.
+* `--depth=<N>` - display directory sizes up to level N;
+* `--long` - display sizes in bytes instead of human-readable format.
 
-If a target object is not specified, then the storage's root directory will be used.
+If target object is not specified, root directory of storage will be used.
 
 ### Cleaning files and directories
 
@@ -259,16 +281,16 @@ ydcmd clean <options> [disk:/object]
 
 **Options**:
 
-* `--dry` - returns a list of objects for removal, instead of deleting;
-* `--type=<S>` - the type of objects for removal (`file` - files, `dir` - directories, `all` - all);
-* `--keep=<S>` - value of selection criteria related to objects to be saved:
-  * A date string in ISO format can be used to select a date **up to which** you want to delete the data (for example, `2014-02-12T12:19:05+04:00`);
-  * For selecting a relative time, you can use a number and a dimension (for example, `7d`, `4w`, `1m`, `1y`);
-  * For selecting the number of copies, you can use a number without a dimension (for example, `31`).
+* `--dry` - do not perform deletion, but output list of objects for deletion;
+* `--type=<S>` - type of objects for deletion (`file` - files, `dir` - directories, `all` - all);
+* `--keep=<S>` - criterion for selecting objects that need to be preserved:
+  * To select date **before** which data needs to be deleted, you can use date string in ISO format (e.g., `2014-02-12T12:19:05+04:00`);
+  * To select relative time, you can use number and dimension (e.g., `7d`, `4w`, `1m`, `1y`);
+  * To select number of copies, you can use number without dimension (e.g., `31`).
 
-If a target object is not specified, then the storage's root directory will be used. Objects are sorted and filtered according to modification date (not by creation date).
+If target object is not specified, root directory of storage will be used. Sorting and filtering of objects is performed by modification date (not creation date).
 
-### Restores a file or directory from trash
+### Restoring file or directory from trash
 
 ```
 ydcmd restore <trash:/object> [name]
@@ -276,12 +298,12 @@ ydcmd restore <trash:/object> [name]
 
 **Options**:
 
-* `--poll=<N>` - interval (in seconds) between status polls during asynchronous operations;
-* `--async` - runs a command without waiting for operation to terminate (`poll`).
+* `--poll=<N>` - time in seconds between status polling when performing asynchronous operations;
+* `--async` - execute command without waiting for completion (`poll`) operation.
 
-In case of name coincidence, directories and files will be overwritten. Directories are restored recursively (including sub folders and sub directories).
+In case of name collision, directories and files will be overwritten. Directories are restored recursively (including nested files and directories).
 
-### Download file from internet to storage
+### Downloading file from internet to storage
 
 ```
 ydcmd download <URL> [disk:/object]
@@ -289,25 +311,25 @@ ydcmd download <URL> [disk:/object]
 
 **Options**:
 
-* `--poll=<N>` - interval (in seconds) between status polls during asynchronous operations;
-* `--async` - runs a command without waiting for operation to terminate (`poll`);
-* `--no-redirects` - disable redirects.
+* `--poll=<N>` - time in seconds between status polling when performing asynchronous operations;
+* `--async` - execute command without waiting for completion (`poll`) operation;
+* `--no-redirects` - prohibit redirects during download.
 
-If target is not specified, target will be root '/' directory with file name extracted from URL (if possible).
+If target object is not specified, root directory of storage will be used, and file name will be chosen based on URL content (if possible).
 
-### Get OAuth token
+### Getting OAuth token
 
 ```
 ydcmd token [code]
 ```
 
-Without argument it shows URL to obtain code. Open URL in your browser, allow access and use code as command argument to obtain OAuth token.
+Without specifying argument, command will output link for getting code. Open link in browser, grant access to application and use received code as argument to get OAuth token.
 
 ## Configuration
 
-For convenience, we recommend creating a configuration file named `~/.ydcmd.cfg` and granting it file permissions `0600` or `0400`. File format:
+For convenience, it is recommended to create configuration file named `~/.ydcmd.cfg` and set permissions `0600` or `0400` on it. File format:
 
-```
+```ini
 [ydcmd]
 # comment
 <option> = <value>
@@ -315,23 +337,30 @@ For convenience, we recommend creating a configuration file named `~/.ydcmd.cfg`
 
 For example:
 
-```
+```ini
 [ydcmd]
-token   = 1234567890
+token   = your_oauth_token
 verbose = yes
 ca-file = /etc/ssl/certs/ca-certificates.crt
 ```
 
+### ⚠️ Important settings:
+
+- **`token`** - OAuth token (required for operation)
+- **`ca-file`** - path to SSL certificates file (optional)
+  - If not specified, application works without SSL certificate verification
+  - On Windows may need to be left empty: `ca-file = `
+
 ## Environment variables
 
-* `YDCMD_TOKEN` - oauth token, has priority over the option `--token`;
-* `SSL_CERT_FILE` - file name with certificates of trusted certification authorities, has priority over the option `--ca-file`.
+* `YDCMD_TOKEN` - oauth token, has priority over `--token` option;
+* `SSL_CERT_FILE` - name of file with certificates of trusted certification centers, has priority over `ca-file` option.
 
-## Exit code
+## Exit codes
 
-When operating in automatic mode (cron), it may be useful to get the result of the command's execution:
+When working in automatic mode (via cron), it may be useful to get command execution result:
 
 * `0` - successful completion;
 * `1` - general application error;
-* `4` - HTTP status code 4xx (client error);
-* `5` - HTTP status code 5xx (server error).
+* `4` - HTTP-4xx status code (client error);
+* `5` - HTTP-5xx status code (server error).

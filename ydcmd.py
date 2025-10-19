@@ -2470,6 +2470,35 @@ def yd_download_cmd(options, args):
     yd_download(options, source, yd_remote_path(target))
 
 
+def yd_save_config(filename, config):
+    """
+    Сохранение конфигурации в INI файл
+
+    Аргументы:
+        filename (str) -- Имя файла конфигурации
+        config   (dict) -- Конфигурация для сохранения
+    """
+    import os
+    
+    # Создаем директорию если её нет
+    config_dir = os.path.dirname(filename)
+    if config_dir and not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    
+    # Записываем конфигурацию
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write("[{0}]\n".format(__title__))
+        for key, value in config.items():
+            if value:  # Записываем только непустые значения
+                f.write("{0} = {1}\n".format(key, value))
+    
+    # Устанавливаем права доступа 0600 (только владелец может читать/писать)
+    try:
+        os.chmod(filename, 0o600)
+    except:
+        pass  # Игнорируем ошибки установки прав на Windows
+
+
 def yd_token_cmd(options, args):
     """
     Получение OAuth токена для приложения
@@ -2478,29 +2507,82 @@ def yd_token_cmd(options, args):
         options (ydOptions) -- Опции приложения
         args    (dict)      -- Аргументы командной строки
     """
+    import os
+    
     if len(args) > 1:
         raise ydError(1, "Too many arguments")
 
     if len(args) == 0:
-        yd_print("Open URL below in your browser, allow access and paste code as argument")
-        yd_print("https://oauth.yandex.com/authorize?response_type=code&client_id={0}".format(options.appid))
-        return
+        yd_print("=" * 60)
+        yd_print("YANDEX.DISK OAUTH TOKEN SETUP")
+        yd_print("=" * 60)
+        yd_print("")
+        yd_print("1. Open the following URL in your browser:")
+        yd_print("   https://oauth.yandex.com/authorize?response_type=code&client_id={0}".format(options.appid))
+        yd_print("")
+        yd_print("2. Allow access to the application")
+        yd_print("3. Copy the authorization code from the page")
+        yd_print("4. Paste it below and press Enter")
+        yd_print("")
+        
+        try:
+            auth_code = input("Authorization code: ").strip()
+            if not auth_code:
+                yd_print("Error: Empty authorization code")
+                return
+        except KeyboardInterrupt:
+            yd_print("\nOperation cancelled by user")
+            return
+        except EOFError:
+            yd_print("\nOperation cancelled")
+            return
+    else:
+        auth_code = args[0]
 
     method  = "POST"
     url     = "https://oauth.yandex.com/token"
-    data    = "grant_type=authorization_code&code={0}&client_id={1}&client_secret={2}".format(args[0], options.appid, options.appsecret)
+    data    = "grant_type=authorization_code&code={0}&client_id={1}&client_secret={2}".format(auth_code, options.appid, options.appsecret)
     headers = yd_headers(options.token)
 
     headers["Content-Type"]   = "application/x-www-form-urlencoded"
     headers["Content-Length"] = len(data)
 
-    del headers["Authorization"]
+    # Remove Authorization header if it exists (it shouldn't be there for token request)
+    headers.pop("Authorization", None)
 
     try:
+        yd_print("Getting OAuth token...")
         result = yd_query_retry(options, method, url, None, headers, None, data)
-        yd_print("OAuth token is: {0}".format(result["access_token"]))
+        access_token = result["access_token"]
+        
+        yd_print("✅ OAuth token received successfully!")
+        yd_print("")
+        
+        # Определяем путь к конфигурационному файлу
+        config_file = os.path.expanduser("~/.ydcmd.cfg")
+        
+        # Загружаем существующую конфигурацию или создаем новую
+        if os.path.exists(config_file):
+            config = yd_load_config(config_file)
+            yd_print("📁 Updating existing configuration file: {0}".format(config_file))
+        else:
+            config = yd_default_config()
+            yd_print("📁 Creating new configuration file: {0}".format(config_file))
+        
+        # Обновляем токен
+        config["token"] = access_token
+        
+        # Сохраняем конфигурацию
+        yd_save_config(config_file, config)
+        
+        yd_print("✅ Configuration saved successfully!")
+        yd_print("")
+        yd_print("You can now use ydcmd commands. Try:")
+        yd_print("   ydcmd info")
+        yd_print("   ydcmd ls")
+        
     except ydError as e:
-        yd_print("Error getting OAuth token: {0}".format(e.errmsg))
+        yd_print("❌ Error getting OAuth token: {0}".format(e.errmsg))
         raise
 
 
