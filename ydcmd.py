@@ -490,7 +490,7 @@ def yd_default_config():
         "skip-md5"         : "no",   # deprecated, use "skip-hash"
         "skip-hash"        : "no",
         "threads"          : "0",
-        "progress"         : "no",
+        "progress"         : "yes",  # Enable progress bar by default
         "iconv"            : "",
         "base-url"         : "https://cloud-api.yandex.com/v1/disk",
         "app-id"           : "2415aa2e6ceb4839b1202e15ac83536c",
@@ -578,6 +578,8 @@ class ydOptions(object):
         self.skip_hash        = self._bool(config["skip-hash"]) or self.skip_md5
         self.threads          = int(config["threads"])
         self.progress         = self._bool(config["progress"]) and not self.quiet
+        if self.debug:
+            yd_debug("Progress setting: {0} (from config: {1}, quiet: {2})".format(self.progress, config["progress"], self.quiet))
         self.iconv            = str(config["iconv"])
 
         if self.iconv == "":

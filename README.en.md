@@ -182,7 +182,7 @@ ydcmd put <file> [disk:/object]
 * `--skip-hash` - skip md5/sha256 integrity checks;
 * `--threads=<N>` - number of worker processes;
 * `--iconv=<S>` - if necessary, try to restore file and directory names from specified encoding (e.g., `--iconv=cp1251`);
-* `--progress` - output operation progress (recommended to install python-progressbar module).
+* `--progress` - output operation progress (enabled by default, recommended to install python-progressbar module).
 
 If target object is not specified, root directory of storage will be used for file upload. If target object points to directory (ends with `/`), source file name will be added to directory name. If target object exists, it will be overwritten without confirmation request. Symbolic links are ignored.
 
@@ -198,7 +198,7 @@ ydcmd get <disk:/object> [file]
 * `--no-recursion` - do not download contents of nested directories;
 * `--skip-hash` - skip md5/sha256 integrity checks;
 * `--threads=<N>` - number of worker processes;
-* `--progress` - output operation progress (recommended to install python-progressbar module).
+* `--progress` - output operation progress (enabled by default, recommended to install python-progressbar module).
 
 If target file name is not specified, file name in storage will be used. If target object exists, it will be overwritten without confirmation request.
 
