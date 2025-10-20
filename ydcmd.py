@@ -2501,6 +2501,550 @@ def yd_save_config(filename, config):
         pass  # Игнорируем ошибки установки прав на Windows
 
 
+def yd_batch_cmd(options, args):
+    """
+    Пакетные операции с файлами и папками
+
+    Аргументы:
+        options (ydOptions) -- Опции приложения
+        args    (dict)      -- Аргументы командной строки
+    """
+    if len(args) < 1:
+        yd_print("Usage: ydcmd batch <operation> [options] [args]")
+        yd_print("")
+        yd_print("Operations:")
+        yd_print("  upload <local_dir> [remote_dir]  -- Upload entire directory")
+        yd_print("  download <remote_dir> [local_dir] -- Download entire directory")
+        yd_print("  delete <file1> [file2] ...       -- Delete multiple files")
+        yd_print("  move <src1> <src2> ... <dest>    -- Move multiple files to destination")
+        yd_print("  copy <src1> <src2> ... <dest>     -- Copy multiple files to destination")
+        return
+
+    operation = args.pop(0).lower()
+    
+    if operation == "upload":
+        if len(args) < 1:
+            yd_print("Error: Local directory not specified")
+            return
+        local_dir = args.pop(0)
+        remote_dir = args.pop(0) if args else "/"
+        yd_batch_upload(options, local_dir, remote_dir)
+        
+    elif operation == "download":
+        if len(args) < 1:
+            yd_print("Error: Remote directory not specified")
+            return
+        remote_dir = args.pop(0)
+        local_dir = args.pop(0) if args else "."
+        yd_batch_download(options, remote_dir, local_dir)
+        
+    elif operation == "delete":
+        if len(args) < 1:
+            yd_print("Error: Files not specified")
+            return
+        yd_batch_delete(options, args)
+        
+    elif operation == "move":
+        if len(args) < 2:
+            yd_print("Error: Source files and destination required")
+            return
+        dest = args.pop()
+        yd_batch_move(options, args, dest)
+        
+    elif operation == "copy":
+        if len(args) < 2:
+            yd_print("Error: Source files and destination required")
+            return
+        dest = args.pop()
+        yd_batch_copy(options, args, dest)
+        
+    else:
+        yd_print("Error: Unknown batch operation: {0}".format(operation))
+
+
+def yd_batch_upload(options, local_dir, remote_dir):
+    """Пакетная загрузка директории"""
+    import os
+    
+    if not os.path.exists(local_dir):
+        yd_print("Error: Local directory does not exist: {0}".format(local_dir))
+        return
+        
+    if not os.path.isdir(local_dir):
+        yd_print("Error: Path is not a directory: {0}".format(local_dir))
+        return
+    
+    yd_print("Batch uploading directory: {0} -> {1}".format(local_dir, remote_dir))
+    
+    uploaded_count = 0
+    failed_count = 0
+    
+    for root, dirs, files in os.walk(local_dir):
+        # Создаем директории
+        rel_path = os.path.relpath(root, local_dir)
+        if rel_path != ".":
+            remote_path = yd_remote_path(remote_dir + "/" + rel_path.replace("\\", "/"))
+            try:
+                yd_create(options, remote_path)
+                yd_print("Created directory: {0}".format(remote_path))
+            except ydError as e:
+                yd_print("Failed to create directory {0}: {1}".format(remote_path, e.errmsg))
+                failed_count += 1
+        
+        # Загружаем файлы
+        for file in files:
+            local_file = os.path.join(root, file)
+            rel_file_path = os.path.relpath(local_file, local_dir)
+            remote_file_path = yd_remote_path(remote_dir + "/" + rel_file_path.replace("\\", "/"))
+            
+            try:
+                yd_put(options, local_file, remote_file_path)
+                yd_print("Uploaded: {0}".format(rel_file_path))
+                uploaded_count += 1
+            except ydError as e:
+                yd_print("Failed to upload {0}: {1}".format(rel_file_path, e.errmsg))
+                failed_count += 1
+    
+    yd_print("")
+    yd_print("Batch upload completed:")
+    yd_print("  Uploaded: {0} files".format(uploaded_count))
+    yd_print("  Failed: {0} files".format(failed_count))
+
+
+def yd_batch_download(options, remote_dir, local_dir):
+    """Пакетное скачивание директории"""
+    import os
+    
+    if not os.path.exists(local_dir):
+        os.makedirs(local_dir)
+    
+    yd_print("Batch downloading directory: {0} -> {1}".format(remote_dir, local_dir))
+    
+    downloaded_count = 0
+    failed_count = 0
+    
+    try:
+        # Получаем список файлов в директории
+        files = yd_list(options, yd_remote_path(remote_dir))
+        
+        for file_info in files:
+            if isinstance(file_info, str):
+                remote_path = yd_remote_path(remote_dir + "/" + file_info)
+                filename = file_info
+                file_type = "file"  # По умолчанию считаем файлом
+            else:
+                remote_path = file_info.path
+                filename = file_info.name
+                file_type = file_info.type
+            
+            local_path = os.path.join(local_dir, filename)
+            
+            try:
+                if file_type == "dir":
+                    # Рекурсивно скачиваем поддиректории
+                    yd_batch_download(options, remote_path, local_path)
+                else:
+                    yd_get(options, remote_path, local_path)
+                    yd_print("Downloaded: {0}".format(filename))
+                    downloaded_count += 1
+            except ydError as e:
+                yd_print("Failed to download {0}: {1}".format(filename, e.errmsg))
+                failed_count += 1
+                
+    except ydError as e:
+        yd_print("Error listing remote directory: {0}".format(e.errmsg))
+        return
+    
+    yd_print("")
+    yd_print("Batch download completed:")
+    yd_print("  Downloaded: {0} files".format(downloaded_count))
+    yd_print("  Failed: {0} files".format(failed_count))
+
+
+def yd_batch_delete(options, files):
+    """Пакетное удаление файлов"""
+    yd_print("Batch deleting {0} files...".format(len(files)))
+    
+    deleted_count = 0
+    failed_count = 0
+    
+    for file_path in files:
+        try:
+            yd_delete(options, yd_remote_path(file_path))
+            yd_print("Deleted: {0}".format(file_path))
+            deleted_count += 1
+        except ydError as e:
+            yd_print("Failed to delete {0}: {1}".format(file_path, e.errmsg))
+            failed_count += 1
+    
+    yd_print("")
+    yd_print("Batch delete completed:")
+    yd_print("  Deleted: {0} files".format(deleted_count))
+    yd_print("  Failed: {0} files".format(failed_count))
+
+
+def yd_batch_move(options, sources, destination):
+    """Пакетное перемещение файлов"""
+    yd_print("Batch moving {0} files to {1}...".format(len(sources), destination))
+    
+    moved_count = 0
+    failed_count = 0
+    
+    for source in sources:
+        try:
+            # Определяем имя файла в источнике
+            source_name = os.path.basename(source)
+            dest_path = yd_remote_path(destination + "/" + source_name)
+            
+            yd_move(options, yd_remote_path(source), dest_path)
+            yd_print("Moved: {0} -> {1}".format(source, dest_path))
+            moved_count += 1
+        except ydError as e:
+            yd_print("Failed to move {0}: {1}".format(source, e.errmsg))
+            failed_count += 1
+    
+    yd_print("")
+    yd_print("Batch move completed:")
+    yd_print("  Moved: {0} files".format(moved_count))
+    yd_print("  Failed: {0} files".format(failed_count))
+
+
+def yd_batch_copy(options, sources, destination):
+    """Пакетное копирование файлов"""
+    yd_print("Batch copying {0} files to {1}...".format(len(sources), destination))
+    
+    copied_count = 0
+    failed_count = 0
+    
+    for source in sources:
+        try:
+            # Определяем имя файла в источнике
+            source_name = os.path.basename(source)
+            dest_path = yd_remote_path(destination + "/" + source_name)
+            
+            yd_copy(options, yd_remote_path(source), dest_path)
+            yd_print("Copied: {0} -> {1}".format(source, dest_path))
+            copied_count += 1
+        except ydError as e:
+            yd_print("Failed to copy {0}: {1}".format(source, e.errmsg))
+            failed_count += 1
+    
+    yd_print("")
+    yd_print("Batch copy completed:")
+    yd_print("  Copied: {0} files".format(copied_count))
+    yd_print("  Failed: {0} files".format(failed_count))
+
+
+def yd_stats_cmd(options, args):
+    """
+    Показать статистику и мониторинг хранилища
+
+    Аргументы:
+        options (ydOptions) -- Опции приложения
+        args    (dict)      -- Аргументы командной строки
+    """
+    if len(args) > 1:
+        yd_print("Usage: ydcmd stats [--detailed]")
+        return
+    
+    detailed = "--detailed" in args
+    
+    try:
+        # Получаем информацию о хранилище
+        info = yd_info(options)
+        
+        yd_print("=" * 60)
+        yd_print("YANDEX.DISK STORAGE STATISTICS")
+        yd_print("=" * 60)
+        yd_print("")
+        
+        # Основная информация
+        yd_print("Storage Information:")
+        yd_print("  Total space: {0}".format(yd_human(info["total_space"])))
+        yd_print("  Used space: {0}".format(yd_human(info["used_space"])))
+        yd_print("  Free space: {0}".format(yd_human(info["total_space"] - info["used_space"])))
+        
+        # Процент использования
+        usage_percent = (info["used_space"] / info["total_space"] * 100) if info["total_space"] > 0 else 0
+        yd_print("  Usage: {0:.1f}%".format(usage_percent))
+        
+        # Визуальная полоска прогресса
+        bar_length = 30
+        filled_length = int(bar_length * usage_percent / 100)
+        bar = "=" * filled_length + "-" * (bar_length - filled_length)
+        yd_print("  Progress: [{0}] {1:.1f}%".format(bar, usage_percent))
+        
+        yd_print("")
+        
+        if detailed:
+            # Детальная статистика
+            yd_print("File Statistics:")
+            
+            # Получаем статистику по корневой директории
+            try:
+                root_stats = yd_du(options, "/")
+                yd_print("  Root directory size: {0}".format(yd_human(root_stats)))
+            except:
+                yd_print("  Root directory size: Unable to calculate")
+            
+            # Последние загруженные файлы
+            yd_print("")
+            yd_print("Recent Uploads:")
+            try:
+                recent_files = yd_last(options, 5)
+                for file_info in recent_files:
+                    yd_print("  {0} ({1}) - {2}".format(
+                        file_info.name,
+                        yd_human(file_info.size),
+                        file_info.modified
+                    ))
+            except:
+                yd_print("  Unable to retrieve recent files")
+        
+        yd_print("")
+        yd_print("Tips:")
+        yd_print("  - Use 'ydcmd clean' to free up space")
+        yd_print("  - Use 'ydcmd du' to analyze directory sizes")
+        yd_print("  - Use 'ydcmd find' to locate large files")
+        
+    except ydError as e:
+        yd_print("Error getting storage statistics: {0}".format(e.errmsg))
+
+
+def yd_find_cmd(options, args):
+    """
+    Поиск файлов по имени
+
+    Аргументы:
+        options (ydOptions) -- Опции приложения
+        args    (dict)      -- Аргументы командной строки
+    """
+    if len(args) < 1:
+        yd_print("Usage: ydcmd find <pattern> [directory]")
+        yd_print("")
+        yd_print("Examples:")
+        yd_print("  ydcmd find *.txt                    -- Find all .txt files")
+        yd_print("  ydcmd find \"*.mp4\" /Videos          -- Find .mp4 files in Videos folder")
+        yd_print("  ydcmd find \"document*\"             -- Find files starting with 'document'")
+        return
+    
+    pattern = args.pop(0)
+    search_dir = args.pop(0) if args else "/"
+    
+    import fnmatch
+    
+    yd_print("Searching for '{0}' in {1}...".format(pattern, search_dir))
+    yd_print("")
+    
+    found_count = 0
+    
+    try:
+        # Рекурсивный поиск
+        def search_recursive(path):
+            nonlocal found_count
+            try:
+                files = yd_list(options, yd_remote_path(path))
+                for file_info in files:
+                    # file_info может быть строкой или объектом
+                    if isinstance(file_info, str):
+                        filename = os.path.basename(file_info)
+                        filepath = file_info
+                    else:
+                        filename = file_info.name
+                        filepath = file_info.path
+                    
+                    if fnmatch.fnmatch(filename.lower(), pattern.lower()):
+                        yd_print("  {0} ({1})".format(filepath, yd_human(file_info.size) if hasattr(file_info, 'size') else "unknown"))
+                        found_count += 1
+                    
+                    # Рекурсивно ищем в поддиректориях
+                    if isinstance(file_info, str):
+                        # Если это строка, проверяем, является ли она директорией
+                        try:
+                            stat_info = yd_stat(options, yd_remote_path(file_info))
+                            if stat_info.get("type") == "dir":
+                                search_recursive(file_info)
+                        except:
+                            pass
+                    elif hasattr(file_info, 'type') and file_info.type == "dir":
+                        search_recursive(filepath)
+            except ydError:
+                pass  # Игнорируем ошибки доступа к директориям
+        
+        search_recursive(search_dir)
+        
+        yd_print("")
+        yd_print("Found {0} files matching '{1}'".format(found_count, pattern))
+        
+    except ydError as e:
+        yd_print("Error during search: {0}".format(e.errmsg))
+
+
+def yd_sync_cmd(options, args):
+    """
+    Расширенные операции синхронизации
+
+    Аргументы:
+        options (ydOptions) -- Опции приложения
+        args    (dict)      -- Аргументы командной строки
+    """
+    if len(args) < 1:
+        yd_print("Usage: ydcmd sync <operation> [options]")
+        yd_print("")
+        yd_print("Operations:")
+        yd_print("  init <local_dir> <remote_dir>     -- Initialize sync")
+        yd_print("  status                             -- Show sync status")
+        yd_print("  pull <remote_dir> <local_dir>     -- Sync from remote to local")
+        yd_print("  push <local_dir> <remote_dir>     -- Sync from local to remote")
+        yd_print("  diff <local_dir> <remote_dir>      -- Show differences")
+        return
+    
+    operation = args.pop(0).lower()
+    
+    if operation == "init":
+        if len(args) < 2:
+            yd_print("Error: Local and remote directories required")
+            return
+        local_dir = args.pop(0)
+        remote_dir = args.pop(0)
+        yd_sync_init(options, local_dir, remote_dir)
+        
+    elif operation == "status":
+        yd_sync_status(options)
+        
+    elif operation == "pull":
+        if len(args) < 2:
+            yd_print("Error: Remote and local directories required")
+            return
+        remote_dir = args.pop(0)
+        local_dir = args.pop(0)
+        yd_sync_pull(options, remote_dir, local_dir)
+        
+    elif operation == "push":
+        if len(args) < 2:
+            yd_print("Error: Local and remote directories required")
+            return
+        local_dir = args.pop(0)
+        remote_dir = args.pop(0)
+        yd_sync_push(options, local_dir, remote_dir)
+        
+    elif operation == "diff":
+        if len(args) < 2:
+            yd_print("Error: Local and remote directories required")
+            return
+        local_dir = args.pop(0)
+        remote_dir = args.pop(0)
+        yd_sync_diff(options, local_dir, remote_dir)
+        
+    else:
+        yd_print("Error: Unknown sync operation: {0}".format(operation))
+
+
+def yd_sync_init(options, local_dir, remote_dir):
+    """Инициализация синхронизации"""
+    import os
+    
+    yd_print("Initializing sync between {0} and {1}...".format(local_dir, remote_dir))
+    
+    # Создаем локальную директорию если не существует
+    if not os.path.exists(local_dir):
+        os.makedirs(local_dir)
+        yd_print("Created local directory: {0}".format(local_dir))
+    
+    # Создаем удаленную директорию если не существует
+    try:
+        yd_create(options, yd_remote_path(remote_dir))
+        yd_print("Created remote directory: {0}".format(remote_dir))
+    except ydError:
+        yd_print("Remote directory already exists: {0}".format(remote_dir))
+    
+    yd_print("Sync initialization completed!")
+
+
+def yd_sync_status(options):
+    """Показать статус синхронизации"""
+    yd_print("Sync Status:")
+    yd_print("  Status: Not implemented yet")
+    yd_print("  Last sync: Not tracked")
+    yd_print("  Conflicts: None")
+
+
+def yd_sync_pull(options, remote_dir, local_dir):
+    """Синхронизация с удаленного на локальный"""
+    yd_print("Syncing from {0} to {1}...".format(remote_dir, local_dir))
+    yd_batch_download(options, remote_dir, local_dir)
+
+
+def yd_sync_push(options, local_dir, remote_dir):
+    """Синхронизация с локального на удаленный"""
+    yd_print("Syncing from {0} to {1}...".format(local_dir, remote_dir))
+    yd_batch_upload(options, local_dir, remote_dir)
+
+
+def yd_sync_diff(options, local_dir, remote_dir):
+    """Показать различия между локальной и удаленной директориями"""
+    import os
+    
+    yd_print("Comparing {0} with {1}...".format(local_dir, remote_dir))
+    yd_print("")
+    
+    try:
+        # Получаем список удаленных файлов
+        remote_files = {}
+        files = yd_list(options, yd_remote_path(remote_dir))
+        for file_info in files:
+            if isinstance(file_info, str):
+                filename = os.path.basename(file_info)
+                remote_files[filename] = {"path": file_info, "size": 0}
+            else:
+                remote_files[file_info.name] = file_info
+        
+        # Получаем список локальных файлов
+        local_files = {}
+        if os.path.exists(local_dir):
+            for item in os.listdir(local_dir):
+                item_path = os.path.join(local_dir, item)
+                if os.path.isfile(item_path):
+                    stat = os.stat(item_path)
+                    local_files[item] = {
+                        'size': stat.st_size,
+                        'modified': stat.st_mtime
+                    }
+        
+        # Находим различия
+        only_local = set(local_files.keys()) - set(remote_files.keys())
+        only_remote = set(remote_files.keys()) - set(local_files.keys())
+        common = set(local_files.keys()) & set(remote_files.keys())
+        
+        if only_local:
+            yd_print("Files only in local directory:")
+            for file in sorted(only_local):
+                yd_print("  + {0}".format(file))
+        
+        if only_remote:
+            yd_print("Files only in remote directory:")
+            for file in sorted(only_remote):
+                yd_print("  - {0}".format(file))
+        
+        if common:
+            yd_print("Files in both directories:")
+            for file in sorted(common):
+                local_size = local_files[file]['size']
+                remote_size = remote_files[file].size if hasattr(remote_files[file], 'size') else remote_files[file].get('size', 0)
+                if local_size != remote_size:
+                    yd_print("  ~ {0} (local: {1}, remote: {2})".format(
+                        file, yd_human(local_size), yd_human(remote_size)
+                    ))
+                else:
+                    yd_print("  = {0}".format(file))
+        
+        if not only_local and not only_remote and not common:
+            yd_print("Directories are identical")
+            
+    except ydError as e:
+        yd_print("Error comparing directories: {0}".format(e.errmsg))
+
+
 def yd_token_cmd(options, args):
     """
     Получение OAuth токена для приложения
@@ -2621,6 +3165,10 @@ def yd_print_usage(cmd = None):
         yd_print("     restore  -- restore file or directory from trash")
         yd_print("     download -- download file from internet to storage")
         yd_print("     token    -- get oauth token for application")
+        yd_print("     batch    -- batch operations (upload, download, delete)")
+        yd_print("     stats    -- show storage statistics and monitoring")
+        yd_print("     find     -- search files by name pattern")
+        yd_print("     sync     -- advanced synchronization operations")
         yd_print("")
         yd_print("Options:")
         yd_print("     --config=<S>  -- config filename (if not default)")
@@ -2888,6 +3436,14 @@ if __name__ == "__main__":
             yd_download_cmd(options, args)
         elif command == "token":
             yd_token_cmd(options, args)
+        elif command == "batch":
+            yd_batch_cmd(options, args)
+        elif command == "stats":
+            yd_stats_cmd(options, args)
+        elif command == "find":
+            yd_find_cmd(options, args)
+        elif command == "sync":
+            yd_sync_cmd(options, args)
         else:
             yd_print_usage(command)
     except ydError as e:

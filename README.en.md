@@ -95,7 +95,11 @@ ydcmd [command] [options] [arguments]
 * `clean` - clean files and directories;
 * `restore` - restore file or directory from trash;
 * `download` - download file from internet to storage;
-* `token` - get oauth token for application work.
+* `token` - get oauth token for application work;
+* `batch` - batch operations (upload, download, delete, move, copy);
+* `stats` - storage statistics and monitoring;
+* `find` - search files by name/pattern;
+* `sync` - advanced synchronization operations.
 
 **Options**:
 
@@ -324,6 +328,57 @@ ydcmd token [code]
 ```
 
 Without specifying argument, command will output link for getting code. Open link in browser, grant access to application and use received code as argument to get OAuth token.
+
+### Batch operations
+
+```
+ydcmd batch <operation> [options] [args]
+```
+
+**Operations**:
+
+* `upload <local_dir> [remote_dir]` - upload entire directory;
+* `download <remote_dir> [local_dir]` - download entire directory;
+* `delete <file1> [file2] ...` - delete multiple files;
+* `move <src1> <src2> ... <dest>` - move multiple files to destination;
+* `copy <src1> <src2> ... <dest>` - copy multiple files to destination.
+
+### Statistics and monitoring
+
+```
+ydcmd stats [--detailed]
+```
+
+Shows storage usage statistics, including:
+- Total space and used space
+- Usage percentage with visual progress bar
+- Detailed statistics (with `--detailed` option)
+- Optimization tips
+
+### File search
+
+```
+ydcmd find <pattern> [directory]
+```
+
+**Examples**:
+- `ydcmd find *.txt` - find all .txt files
+- `ydcmd find "*.mp4" /Videos` - find .mp4 files in Videos folder
+- `ydcmd find "document*"` - find files starting with "document"
+
+### Advanced synchronization
+
+```
+ydcmd sync <operation> [options]
+```
+
+**Operations**:
+
+* `init <local_dir> <remote_dir>` - initialize synchronization;
+* `status` - show sync status;
+* `pull <remote_dir> <local_dir>` - sync from remote to local;
+* `push <local_dir> <remote_dir>` - sync from local to remote;
+* `diff <local_dir> <remote_dir>` - show differences between directories.
 
 ## Configuration
 
