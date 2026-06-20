@@ -1,8 +1,1 @@
-ydcmd.pyc
-debian/files
-debian/ydcmd/
-debian/ydcmd.substvars
-debian/ydcmd.debhelper.log
-debian/ydcmd.prerm.debhelper
-debian/ydcmd.postinst.debhelper
-windows/build
+mise.toml

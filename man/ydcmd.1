@@ -64,6 +64,18 @@ Download file from internet to storage.
 .TP
 .B token
 Get OAuth token for application.
+.TP
+.B batch
+Batch operations: upload, download, delete, move, copy multiple files or directories.
+.TP
+.B stats
+Show storage statistics and usage monitoring.
+.TP
+.B find
+Search files by name pattern (supports wildcards).
+.TP
+.B sync
+Advanced synchronization operations: init, status, pull, push, diff.
 .SH OPTIONS
 .TP
 .B --config=<S>
@@ -254,6 +266,54 @@ Runs a command without waiting for operation to terminate (poll).
 Disable redirects.
 .TP
 If target is not specified, target will be root '/' directory with file name extracted from URL (if possible).
+.SS batch
+.TP
+Sub-commands:
+.br
+.B upload <local_dir> [remote_dir]
+\- Upload entire directory tree to storage.
+.br
+.B download <remote_dir> [local_dir]
+\- Download entire directory tree from storage.
+.br
+.B delete <file1> [file2] ...
+\- Delete multiple files from storage.
+.br
+.B move <src1> [src2] ... <dest>
+\- Move multiple files to destination directory.
+.br
+.B copy <src1> [src2] ... <dest>
+\- Copy multiple files to destination directory.
+.SS stats
+.TP
+.B --detailed
+Show detailed statistics including file counts and recent uploads.
+.TP
+Displays total, used and free space with a visual progress bar.
+.SS find
+.TP
+.B ydcmd find <pattern> [directory]
+Search for files matching the given pattern (supports wildcards such as *, ?).
+.TP
+If directory is not specified, search starts from the root '/' directory.
+.SS sync
+.TP
+Sub-commands:
+.br
+.B init <local_dir> <remote_dir>
+\- Initialize synchronization between local and remote directories.
+.br
+.B status
+\- Show current synchronization status.
+.br
+.B pull <remote_dir> <local_dir>
+\- Synchronize local directory from remote.
+.br
+.B push <local_dir> <remote_dir>
+\- Synchronize remote directory from local.
+.br
+.B diff <local_dir> <remote_dir>
+\- Show differences between local and remote directories.
 .SH CONFIGURATION
 .TP
 For convenience, we recommend creating a configuration file named ~/.ydcmd.cfg and granting it file permissions 0600 or 0400. File format:

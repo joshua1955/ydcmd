@@ -1,11 +1,11 @@
 # Maintainer: Anton Batenev <antonbatenev@yandex.ru>
 
 pkgname=ydcmd
-pkgver=2.12.2
+pkgver=2.13.1
 pkgrel=1
 pkgdesc='Command line client for Yandex.Disk'
 arch=('any')
-url='https://github.com/abbat/ydcmd'
+url='https://github.com/joshua1955/ydcmd.git'
 license=('BSD')
 depends=('python' 'python-dateutil')
 makedepends=('python' 'git')
@@ -13,7 +13,7 @@ optdepends=(
     'ca-certificates: ssl certificates validation'
     'python-progressbar: pretty console upload/download progressbar'
 )
-source=("git+https://github.com/abbat/ydcmd.git#tag=v${pkgver}")
+source=("git+https://github.com/joshua1955/ydcmd.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 
 package() {

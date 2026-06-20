@@ -5,7 +5,7 @@ BuildArch:     noarch
 Summary:       Command line Yandex.Disk client
 Group:         Applications/Internet
 License:       BSD-2-Clause
-URL:           https://github.com/abbat/ydcmd
+URL:           https://github.com/joshua1955/ydcmd.git
 Source0:       https://build.opensuse.org/source/home:antonbatenev:ydcmd/ydcmd/ydcmd_%{version}.tar.bz2
 BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 

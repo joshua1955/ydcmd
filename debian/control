@@ -1,12 +1,12 @@
 Source: ydcmd
 Section: utils
 Priority: optional
-Maintainer: Anton Batenev <antonbatenev@yandex.ru>
+Maintainer: A K <mrantidod@gmail.com>
 Build-Depends: debhelper (>= 7.0.50~), python3
 Standards-Version: 3.9.4
-Vcs-Git: https://github.com/abbat/ydcmd.git
-Vcs-Browser: https://github.com/abbat/ydcmd
-Homepage: https://github.com/abbat/ydcmd
+Vcs-Git: https://github.com/joshua1955/ydcmd.git
+Vcs-Browser: https://github.com/joshua1955/ydcmd
+Homepage: https://github.com/joshua1955/ydcmd
 
 Package: ydcmd
 Architecture: all

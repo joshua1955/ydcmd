@@ -29,6 +29,9 @@ try:
 except ImportError:
     sys.stderr.write("Python module dateutil not found.\nPlease, install \"python-dateutil\"\n")
     sys.exit(1)
+except Exception as e:
+    sys.stderr.write("Failed to import dateutil: {}\nTry upgrading dependencies: pip install --upgrade six python-dateutil\n".format(e))
+    sys.exit(1)
 
 
 # suggested python modules
