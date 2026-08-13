@@ -301,19 +301,21 @@ If directory is not specified, search starts from the root '/' directory.
 Sub-commands:
 .br
 .B init <local_dir> <remote_dir>
-\- Initialize synchronization between local and remote directories.
+\- Initialize synchronization between local and remote directories and create <local_dir>/.ydcmd-sync.cfg.
 .br
-.B status
+.B status [local_dir]
 \- Show current synchronization status.
 .br
-.B pull <remote_dir> <local_dir>
+.B pull <local_dir> [remote_dir]
 \- Synchronize local directory from remote.
 .br
-.B push <local_dir> <remote_dir>
+.B push <local_dir> [remote_dir]
 \- Synchronize remote directory from local.
 .br
-.B diff <local_dir> <remote_dir>
+.B diff <local_dir> [remote_dir]
 \- Show differences between local and remote directories.
+.TP
+After init, filters can be set in <local_dir>/.ydcmd-sync.cfg: pattern/include/exclude for shell-style file patterns and tag-filter to skip directories containing a tag file.
 .SH CONFIGURATION
 .TP
 For convenience, we recommend creating a configuration file named ~/.ydcmd.cfg and granting it file permissions 0600 or 0400. File format:

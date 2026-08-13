@@ -376,11 +376,24 @@ ydcmd sync <operation> [options]
 
 **Operations**:
 
-* `init <local_dir> <remote_dir>` - initialize synchronization;
-* `status` - show sync status;
-* `pull <remote_dir> <local_dir>` - sync from remote to local;
-* `push <local_dir> <remote_dir>` - sync from local to remote;
-* `diff <local_dir> <remote_dir>` - show differences between directories.
+* `init <local_dir> <remote_dir>` - initialize synchronization and create `<local_dir>/.ydcmd-sync.cfg`;
+* `status [local_dir]` - show sync status;
+* `pull <local_dir> [remote_dir]` - sync from remote to local;
+* `push <local_dir> [remote_dir]` - sync from local to remote;
+* `diff <local_dir> [remote_dir]` - show differences between directories.
+
+After `sync init`, edit `<local_dir>/.ydcmd-sync.cfg`:
+
+```ini
+[sync]
+remote-dir = /Backup
+pattern =
+include = *.jpg, docs/*.pdf
+exclude = *.tmp, cache/*, .git/*
+tag-filter = .ydcmd-ignore
+```
+
+Filter values are comma- or whitespace-separated shell-style patterns. `pattern` is an alias for include patterns. `include` limits synced files to matching paths or names. `exclude` skips matching files and directories. `tag-filter` skips a whole directory when it contains a file with that name. The sync config file itself is not uploaded or downloaded.
 
 ## Configuration
 
@@ -400,6 +413,73 @@ token   = your_oauth_token
 verbose = yes
 ca-file = /etc/ssl/certs/ca-certificates.crt
 ```
+
+Full config example:
+
+```ini
+[ydcmd]
+timeout = 30
+poll = 1
+retries = 3
+delay = 30
+limit = 100
+chunk = 512
+token = your_oauth_token
+quiet = no
+verbose = no
+debug = no
+async = no
+rsync = no
+no-recursion = no
+no-redirects = no
+skip-md5 = no
+skip-hash = no
+threads = 0
+progress = yes
+base-url = https://cloud-api.yandex.com/v1/disk
+app-id = 2415aa2e6ceb4839b1202e15ac83536c
+app-secret = b8ae32ce025c451f84bd7df17029cb55
+ca-file = /etc/ssl/certs/ca-certificates.crt
+ciphers = kEECDH+AES128:kEECDH+AES256:kRSA+AES128:kRSA+AES256:AES128-SHA:AES256-SHA:!aNULL:!MD5
+depth = 1
+dry = no
+type = all
+trash = no
+```
+
+Do not commit or publish `token`.
+
+Parameters:
+
+| Parameter | Meaning |
+| --- | --- |
+| `timeout` | Network connection and API request timeout, seconds. |
+| `poll` | Delay between asynchronous operation status checks, seconds. |
+| `retries` | Number of API request retries after a temporary error. |
+| `delay` | Delay between API request retries, seconds. |
+| `limit` | Number of objects requested by one file-list API call. |
+| `chunk` | Read/write block size for file operations, KB. |
+| `token` | Yandex OAuth token. Required and secret. |
+| `quiet` | `yes` suppresses error output. |
+| `verbose` | `yes` enables detailed operation output. |
+| `debug` | `yes` enables debug output. |
+| `async` | `yes` does not wait for supported asynchronous operations to finish. |
+| `rsync` | `yes` removes extra files during `put/get --rsync`. |
+| `no-recursion` | `yes` disables recursive processing of nested directories. |
+| `no-redirects` | `yes` disables HTTP redirects for `download`. |
+| `skip-md5` | Legacy option, equivalent to `skip-hash`. |
+| `skip-hash` | `yes` disables md5/sha256 integrity checks. |
+| `threads` | Number of worker processes for directory upload/download. `0` means no pool. |
+| `progress` | `yes` shows a progress bar if `python-progressbar` is available. |
+| `base-url` | Base URL for the Yandex.Disk REST API. |
+| `app-id` | OAuth client id of the built-in application. |
+| `app-secret` | OAuth client secret of the built-in application. |
+| `ca-file` | Trusted CA certificate file for HTTPS. Empty means no certificate validation. |
+| `ciphers` | TLS cipher suites for HTTPS. |
+| `depth` | Directory size output depth for `du`. |
+| `dry` | `yes` for `clean`: show what would be deleted without deleting. |
+| `type` | Object type for `clean`: `file`, `dir`, or `all`. |
+| `trash` | `yes` for `rm`: move to trash instead of permanent deletion. |
 
 ### ⚠️ Important settings:
 

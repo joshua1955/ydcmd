@@ -12,13 +12,14 @@ import os, sys, signal, errno, socket
 import re, codecs, json
 import time, datetime
 import hashlib, shutil
+import fnmatch
 
 
-# minimum required python version is 2.6
+# minimum required python version is 3.x
 try:
     import ssl, multiprocessing.pool
 except ImportError:
-    sys.stderr.write("Python >= 2.6 required\n")
+    sys.stderr.write("Python 3 required\n")
     sys.exit(1)
 
 
@@ -2504,6 +2505,127 @@ def yd_save_config(filename, config):
         pass  # Игнорируем ошибки установки прав на Windows
 
 
+YD_SYNC_CONFIG = ".ydcmd-sync.cfg"
+
+
+def yd_split_patterns(value):
+    """
+    Разбор списка шаблонов из sync-конфига.
+    """
+    if not value:
+        return []
+
+    return [item.strip() for item in re.split(r"[\s,]+", value) if item.strip()]
+
+
+def yd_sync_config_path(local_dir):
+    return os.path.join(local_dir, YD_SYNC_CONFIG)
+
+
+def yd_sync_default_config(local_dir, remote_dir):
+    return {
+        "remote-dir" : remote_dir,
+        "pattern"    : "",
+        "include"    : "",
+        "exclude"    : "",
+        "tag-filter" : ""
+    }
+
+
+def yd_save_sync_config(local_dir, remote_dir):
+    config_file = yd_sync_config_path(local_dir)
+    parser = configparser.ConfigParser()
+    parser["sync"] = yd_sync_default_config(local_dir, remote_dir)
+
+    with open(config_file, "w", encoding = "utf-8") as f:
+        parser.write(f)
+
+    return config_file
+
+
+def yd_load_sync_config(local_dir, remote_dir = None):
+    config = yd_sync_default_config(local_dir, remote_dir or "")
+    config_file = yd_sync_config_path(local_dir)
+
+    parser = configparser.ConfigParser()
+    parser.read(config_file)
+
+    if parser.has_section("sync"):
+        for option in parser.options("sync"):
+            config[option.lower()] = parser.get("sync", option).strip()
+
+    if remote_dir:
+        config["remote-dir"] = remote_dir
+
+    if not config["remote-dir"]:
+        raise ydError(1, "Remote directory not specified and {0} not found".format(config_file))
+
+    return config
+
+
+def yd_sync_patterns(config, name):
+    values = []
+
+    if name == "include":
+        values.extend(yd_split_patterns(config.get("pattern", "")))
+
+    values.extend(yd_split_patterns(config.get(name, "")))
+    return values
+
+
+def yd_sync_match(patterns, rel_path, name):
+    if not patterns:
+        return False
+
+    rel_path = rel_path.replace("\\", "/")
+    for pattern in patterns:
+        if pattern.endswith("/*") and (rel_path == pattern[:-2] or name == pattern[:-2]):
+            return True
+        if fnmatch.fnmatch(rel_path, pattern) or fnmatch.fnmatch(name, pattern):
+            return True
+
+    return False
+
+
+def yd_sync_allowed(config, rel_path, name):
+    if config == None:
+        config = {}
+
+    includes = yd_sync_patterns(config, "include")
+    excludes = yd_sync_patterns(config, "exclude")
+
+    if includes and not yd_sync_match(includes, rel_path, name):
+        return False
+
+    if excludes and yd_sync_match(excludes, rel_path, name):
+        return False
+
+    return True
+
+
+def yd_sync_excluded(config, rel_path, name):
+    if config == None:
+        config = {}
+
+    return yd_sync_match(yd_sync_patterns(config, "exclude"), rel_path, name)
+
+
+def yd_sync_local_tagged(config, path):
+    if config == None:
+        config = {}
+
+    tag = config.get("tag-filter", "")
+    return bool(tag and os.path.exists(os.path.join(path, tag)))
+
+
+def yd_sync_remote_tagged(config, items):
+    if config == None:
+        config = {}
+
+    tag = config.get("tag-filter", "")
+    return bool(tag and tag in items)
+
+
 def yd_batch_cmd(options, args):
     """
     Пакетные операции с файлами и папками
@@ -2565,7 +2687,7 @@ def yd_batch_cmd(options, args):
         yd_print("Error: Unknown batch operation: {0}".format(operation))
 
 
-def yd_batch_upload(options, local_dir, remote_dir):
+def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
     """Пакетная загрузка директории"""
     import os
     
@@ -2577,15 +2699,27 @@ def yd_batch_upload(options, local_dir, remote_dir):
         yd_print("Error: Path is not a directory: {0}".format(local_dir))
         return
     
+    if sync_config == None:
+        sync_config = {}
+
     yd_print("Batch uploading directory: {0} -> {1}".format(local_dir, remote_dir))
     
     uploaded_count = 0
     failed_count = 0
     
     for root, dirs, files in os.walk(local_dir):
+        if yd_sync_local_tagged(sync_config, root):
+            dirs[:] = []
+            continue
+
         # Создаем директории
         rel_path = os.path.relpath(root, local_dir)
-        if rel_path != ".":
+        rel_path = "" if rel_path == "." else rel_path.replace("\\", "/")
+        dirs[:] = [
+            name for name in dirs
+            if not yd_sync_excluded(sync_config, (rel_path + "/" + name).strip("/"), name)
+        ]
+        if rel_path:
             remote_path = yd_remote_path(remote_dir + "/" + rel_path.replace("\\", "/"))
             try:
                 yd_create(options, remote_path)
@@ -2598,6 +2732,14 @@ def yd_batch_upload(options, local_dir, remote_dir):
         for file in files:
             local_file = os.path.join(root, file)
             rel_file_path = os.path.relpath(local_file, local_dir)
+            rel_filter_path = rel_file_path.replace("\\", "/")
+
+            if file == YD_SYNC_CONFIG:
+                continue
+
+            if not yd_sync_allowed(sync_config, rel_filter_path, file):
+                continue
+
             remote_file_path = yd_remote_path(remote_dir + "/" + rel_file_path.replace("\\", "/"))
             
             try:
@@ -2614,13 +2756,16 @@ def yd_batch_upload(options, local_dir, remote_dir):
     yd_print("  Failed: {0} files".format(failed_count))
 
 
-def yd_batch_download(options, remote_dir, local_dir):
+def yd_batch_download(options, remote_dir, local_dir, sync_config = None, rel_dir = ""):
     """Пакетное скачивание директории"""
     import os
     
     if not os.path.exists(local_dir):
         os.makedirs(local_dir)
     
+    if sync_config == None:
+        sync_config = {}
+
     yd_print("Batch downloading directory: {0} -> {1}".format(remote_dir, local_dir))
     
     downloaded_count = 0
@@ -2629,23 +2774,32 @@ def yd_batch_download(options, remote_dir, local_dir):
     try:
         # Получаем список файлов в директории
         files = yd_list(options, yd_remote_path(remote_dir))
+
+        if yd_sync_remote_tagged(sync_config, files):
+            yd_print("Skipped tagged directory: {0}".format(remote_dir))
+            return
         
-        for file_info in files:
-            if isinstance(file_info, str):
-                remote_path = yd_remote_path(remote_dir + "/" + file_info)
-                filename = file_info
-                file_type = "file"  # По умолчанию считаем файлом
-            else:
-                remote_path = file_info.path
-                filename = file_info.name
-                file_type = file_info.type
+        for file_info in listvalues(files):
+            remote_path = file_info.path
+            filename = file_info.name
+            file_type = file_info.type
+            rel_path = (rel_dir + "/" + filename).strip("/")
+
+            if filename == YD_SYNC_CONFIG:
+                continue
+
+            if file_type == "dir":
+                if yd_sync_excluded(sync_config, rel_path, filename):
+                    continue
+            elif not yd_sync_allowed(sync_config, rel_path, filename):
+                continue
             
             local_path = os.path.join(local_dir, filename)
             
             try:
                 if file_type == "dir":
                     # Рекурсивно скачиваем поддиректории
-                    yd_batch_download(options, remote_path, local_path)
+                    yd_batch_download(options, remote_path, local_path, sync_config, rel_path)
                 else:
                     yd_get(options, remote_path, local_path)
                     yd_print("Downloaded: {0}".format(filename))
@@ -2896,10 +3050,10 @@ def yd_sync_cmd(options, args):
         yd_print("")
         yd_print("Operations:")
         yd_print("  init <local_dir> <remote_dir>     -- Initialize sync")
-        yd_print("  status                             -- Show sync status")
-        yd_print("  pull <remote_dir> <local_dir>     -- Sync from remote to local")
-        yd_print("  push <local_dir> <remote_dir>     -- Sync from local to remote")
-        yd_print("  diff <local_dir> <remote_dir>      -- Show differences")
+        yd_print("  status [local_dir]                 -- Show sync status")
+        yd_print("  pull <local_dir> [remote_dir]     -- Sync from remote to local")
+        yd_print("  push <local_dir> [remote_dir]     -- Sync from local to remote")
+        yd_print("  diff <local_dir> [remote_dir]      -- Show differences")
         return
     
     operation = args.pop(0).lower()
@@ -2908,36 +3062,72 @@ def yd_sync_cmd(options, args):
         if len(args) < 2:
             yd_print("Error: Local and remote directories required")
             return
+        if len(args) > 2:
+            yd_print("Error: Too many arguments")
+            return
         local_dir = args.pop(0)
         remote_dir = args.pop(0)
         yd_sync_init(options, local_dir, remote_dir)
         
     elif operation == "status":
-        yd_sync_status(options)
+        if len(args) > 1:
+            yd_print("Error: Too many arguments")
+            return
+        local_dir = args.pop(0) if args else "."
+        sync_config = yd_load_sync_config(local_dir)
+        yd_sync_status(options, local_dir, sync_config)
         
     elif operation == "pull":
-        if len(args) < 2:
-            yd_print("Error: Remote and local directories required")
+        if len(args) < 1:
+            yd_print("Error: Local directory required")
             return
-        remote_dir = args.pop(0)
-        local_dir = args.pop(0)
-        yd_sync_pull(options, remote_dir, local_dir)
+        if len(args) > 2:
+            yd_print("Error: Too many arguments")
+            return
+        if len(args) == 1:
+            local_dir = args.pop(0)
+            sync_config = yd_load_sync_config(local_dir)
+            remote_dir = sync_config["remote-dir"]
+        else:
+            first = args.pop(0)
+            second = args.pop(0)
+            if (first.startswith("disk:") or first.startswith("/")) and not os.path.exists(first):
+                remote_dir = first
+                local_dir = second
+            else:
+                local_dir = first
+                remote_dir = second
+            sync_config = yd_load_sync_config(local_dir, remote_dir)
+        yd_sync_pull(options, remote_dir, local_dir, sync_config)
         
     elif operation == "push":
-        if len(args) < 2:
-            yd_print("Error: Local and remote directories required")
+        if len(args) < 1:
+            yd_print("Error: Local directory required")
+            return
+        if len(args) > 2:
+            yd_print("Error: Too many arguments")
             return
         local_dir = args.pop(0)
-        remote_dir = args.pop(0)
-        yd_sync_push(options, local_dir, remote_dir)
+        remote_dir = args.pop(0) if args else None
+        sync_config = yd_load_sync_config(local_dir, remote_dir)
+        yd_sync_push(options, local_dir, sync_config["remote-dir"], sync_config)
         
     elif operation == "diff":
-        if len(args) < 2:
-            yd_print("Error: Local and remote directories required")
+        if len(args) < 1:
+            yd_print("Error: Local directory required")
             return
-        local_dir = args.pop(0)
-        remote_dir = args.pop(0)
-        yd_sync_diff(options, local_dir, remote_dir)
+        if len(args) > 2:
+            yd_print("Error: Too many arguments")
+            return
+        if len(args) == 1:
+            local_dir = args.pop(0)
+            sync_config = yd_load_sync_config(local_dir)
+            remote_dir = sync_config["remote-dir"]
+        else:
+            local_dir = args.pop(0)
+            remote_dir = args.pop(0)
+            sync_config = yd_load_sync_config(local_dir, remote_dir)
+        yd_sync_diff(options, local_dir, remote_dir, sync_config)
         
     else:
         yd_print("Error: Unknown sync operation: {0}".format(operation))
@@ -2953,6 +3143,9 @@ def yd_sync_init(options, local_dir, remote_dir):
     if not os.path.exists(local_dir):
         os.makedirs(local_dir)
         yd_print("Created local directory: {0}".format(local_dir))
+
+    config_file = yd_save_sync_config(local_dir, remote_dir)
+    yd_print("Created sync config: {0}".format(config_file))
     
     # Создаем удаленную директорию если не существует
     try:
@@ -2964,29 +3157,127 @@ def yd_sync_init(options, local_dir, remote_dir):
     yd_print("Sync initialization completed!")
 
 
-def yd_sync_status(options):
+def yd_sync_local_status(sync_config, local_dir):
+    result = {
+        "files"       : 0,
+        "dirs"        : 0,
+        "skipped"     : 0,
+        "bytes"       : 0,
+        "config_file" : os.path.exists(yd_sync_config_path(local_dir))
+    }
+
+    if not os.path.exists(local_dir):
+        result["missing"] = True
+        return result
+
+    for root, dirs, files in os.walk(local_dir):
+        if yd_sync_local_tagged(sync_config, root):
+            result["skipped"] += len(files) + len(dirs)
+            dirs[:] = []
+            continue
+
+        rel_dir = os.path.relpath(root, local_dir)
+        rel_dir = "" if rel_dir == "." else rel_dir.replace("\\", "/")
+        kept_dirs = []
+        for name in dirs:
+            rel_path = (rel_dir + "/" + name).strip("/")
+            if yd_sync_excluded(sync_config, rel_path, name):
+                result["skipped"] += 1
+            else:
+                kept_dirs.append(name)
+                result["dirs"] += 1
+        dirs[:] = kept_dirs
+
+        for name in files:
+            rel_path = (rel_dir + "/" + name).strip("/")
+            if name == YD_SYNC_CONFIG:
+                continue
+            if not yd_sync_allowed(sync_config, rel_path, name):
+                result["skipped"] += 1
+                continue
+            result["files"] += 1
+            try:
+                result["bytes"] += os.path.getsize(os.path.join(root, name))
+            except OSError:
+                pass
+
+    return result
+
+
+def yd_sync_remote_status(options, sync_config):
+    result = {
+        "exists"  : False,
+        "items"   : 0,
+        "skipped" : 0
+    }
+
+    files = yd_list(options, yd_remote_path(sync_config["remote-dir"]))
+    result["exists"] = True
+
+    if yd_sync_remote_tagged(sync_config, files):
+        result["skipped"] = len(files)
+        return result
+
+    for item in listvalues(files):
+        if item.name == YD_SYNC_CONFIG:
+            continue
+        if item.type == "dir":
+            if yd_sync_excluded(sync_config, item.name, item.name):
+                result["skipped"] += 1
+                continue
+        elif not yd_sync_allowed(sync_config, item.name, item.name):
+            result["skipped"] += 1
+            continue
+        result["items"] += 1
+
+    return result
+
+
+def yd_sync_status(options, local_dir, sync_config):
     """Показать статус синхронизации"""
+    local = yd_sync_local_status(sync_config, local_dir)
+
     yd_print("Sync Status:")
-    yd_print("  Status: Not implemented yet")
-    yd_print("  Last sync: Not tracked")
-    yd_print("  Conflicts: None")
+    yd_print("  Local dir: {0}".format(local_dir))
+    yd_print("  Config: {0}".format(yd_sync_config_path(local_dir)))
+    yd_print("  Config exists: {0}".format("yes" if local["config_file"] else "no"))
+    yd_print("  Remote dir: {0}".format(sync_config["remote-dir"]))
+    yd_print("  Include: {0}".format(sync_config.get("include") or sync_config.get("pattern") or "<none>"))
+    yd_print("  Exclude: {0}".format(sync_config.get("exclude") or "<none>"))
+    yd_print("  Tag filter: {0}".format(sync_config.get("tag-filter") or "<none>"))
+
+    if local.get("missing"):
+        yd_print("  Local status: missing")
+    else:
+        yd_print("  Local status: {0} files, {1} dirs, {2} skipped, {3}".format(
+            local["files"], local["dirs"], local["skipped"], yd_human(local["bytes"])
+        ))
+
+    try:
+        remote = yd_sync_remote_status(options, sync_config)
+        yd_print("  Remote status: {0} visible items, {1} skipped".format(remote["items"], remote["skipped"]))
+    except ydError as e:
+        yd_print("  Remote status: error: {0}".format(e.errmsg))
 
 
-def yd_sync_pull(options, remote_dir, local_dir):
+def yd_sync_pull(options, remote_dir, local_dir, sync_config = None):
     """Синхронизация с удаленного на локальный"""
     yd_print("Syncing from {0} to {1}...".format(remote_dir, local_dir))
-    yd_batch_download(options, remote_dir, local_dir)
+    yd_batch_download(options, remote_dir, local_dir, sync_config)
 
 
-def yd_sync_push(options, local_dir, remote_dir):
+def yd_sync_push(options, local_dir, remote_dir, sync_config = None):
     """Синхронизация с локального на удаленный"""
     yd_print("Syncing from {0} to {1}...".format(local_dir, remote_dir))
-    yd_batch_upload(options, local_dir, remote_dir)
+    yd_batch_upload(options, local_dir, remote_dir, sync_config)
 
 
-def yd_sync_diff(options, local_dir, remote_dir):
+def yd_sync_diff(options, local_dir, remote_dir, sync_config = None):
     """Показать различия между локальной и удаленной директориями"""
     import os
+
+    if sync_config == None:
+        sync_config = {}
     
     yd_print("Comparing {0} with {1}...".format(local_dir, remote_dir))
     yd_print("")
@@ -2995,12 +3286,12 @@ def yd_sync_diff(options, local_dir, remote_dir):
         # Получаем список удаленных файлов
         remote_files = {}
         files = yd_list(options, yd_remote_path(remote_dir))
-        for file_info in files:
-            if isinstance(file_info, str):
-                filename = os.path.basename(file_info)
-                remote_files[filename] = {"path": file_info, "size": 0}
-            else:
-                remote_files[file_info.name] = file_info
+        for file_info in listvalues(files):
+            if file_info.name == YD_SYNC_CONFIG:
+                continue
+            if not yd_sync_allowed(sync_config, file_info.name, file_info.name):
+                continue
+            remote_files[file_info.name] = file_info
         
         # Получаем список локальных файлов
         local_files = {}
@@ -3008,6 +3299,10 @@ def yd_sync_diff(options, local_dir, remote_dir):
             for item in os.listdir(local_dir):
                 item_path = os.path.join(local_dir, item)
                 if os.path.isfile(item_path):
+                    if item == YD_SYNC_CONFIG:
+                        continue
+                    if not yd_sync_allowed(sync_config, item, item):
+                        continue
                     stat = os.stat(item_path)
                     local_files[item] = {
                         'size': stat.st_size,
@@ -3344,6 +3639,22 @@ def yd_print_usage(cmd = None):
     elif cmd == "token":
         yd_print("Usage:")
         yd_print("     {0} token [code]".format(sys.argv[0]))
+        yd_print("")
+    elif cmd == "sync":
+        yd_print("Usage:")
+        yd_print("     {0} sync init <local_dir> <remote_dir>".format(sys.argv[0]))
+        yd_print("     {0} sync push <local_dir> [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync pull <local_dir> [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync diff <local_dir> [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync status [local_dir]".format(sys.argv[0]))
+        yd_print("")
+        yd_print("Config:")
+        yd_print("     sync init creates <local_dir>/.ydcmd-sync.cfg")
+        yd_print("     remote-dir  -- remote directory used when [remote_dir] is omitted")
+        yd_print("     pattern     -- alias for include")
+        yd_print("     include     -- comma/space separated shell-style file patterns")
+        yd_print("     exclude     -- comma/space separated shell-style file or directory patterns")
+        yd_print("     tag-filter  -- skip directories containing this tag file")
         yd_print("")
     else:
         sys.stderr.write("Unknown command {0}\n".format(cmd))

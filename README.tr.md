@@ -376,11 +376,24 @@ ydcmd sync <operation> [options]
 
 **Islemler**:
 
-* `init <local_dir> <remote_dir>` - esitlemeyi baslat;
-* `status` - esitleme durumunu goster;
-* `pull <remote_dir> <local_dir>` - uzaktan yerele esitle;
-* `push <local_dir> <remote_dir>` - yerelden uzaga esitle;
-* `diff <local_dir> <remote_dir>` - dizinler arasindaki farklari goster.
+* `init <local_dir> <remote_dir>` - esitlemeyi baslat ve `<local_dir>/.ydcmd-sync.cfg` olustur;
+* `status [local_dir]` - esitleme durumunu goster;
+* `pull <local_dir> [remote_dir]` - uzaktan yerele esitle;
+* `push <local_dir> [remote_dir]` - yerelden uzaga esitle;
+* `diff <local_dir> [remote_dir]` - dizinler arasindaki farklari goster.
+
+`sync init` sonrasi `<local_dir>/.ydcmd-sync.cfg` dosyasini duzenleyin:
+
+```ini
+[sync]
+remote-dir = /Backup
+pattern =
+include = *.jpg, docs/*.pdf
+exclude = *.tmp, cache/*, .git/*
+tag-filter = .ydcmd-ignore
+```
+
+Filtre degerleri virgul veya boslukla ayrilir ve shell-style desenler kullanir. `pattern`, include desenleri icin alias'tir. `include`, esitlemeyi eslesen yol veya ada sahip dosyalarla sinirlar. `exclude`, eslesen dosya ve dizinleri atlar. `tag-filter`, icinde bu ada sahip dosya bulunan tum dizini atlar. Sync config dosyasinin kendisi yuklenmez veya indirilmez.
 
 ## Yapilandirma
 
@@ -400,6 +413,73 @@ token   = your_oauth_token
 verbose = yes
 ca-file = /etc/ssl/certs/ca-certificates.crt
 ```
+
+Tam yapilandirma ornegi:
+
+```ini
+[ydcmd]
+timeout = 30
+poll = 1
+retries = 3
+delay = 30
+limit = 100
+chunk = 512
+token = your_oauth_token
+quiet = no
+verbose = no
+debug = no
+async = no
+rsync = no
+no-recursion = no
+no-redirects = no
+skip-md5 = no
+skip-hash = no
+threads = 0
+progress = yes
+base-url = https://cloud-api.yandex.com/v1/disk
+app-id = 2415aa2e6ceb4839b1202e15ac83536c
+app-secret = b8ae32ce025c451f84bd7df17029cb55
+ca-file = /etc/ssl/certs/ca-certificates.crt
+ciphers = kEECDH+AES128:kEECDH+AES256:kRSA+AES128:kRSA+AES256:AES128-SHA:AES256-SHA:!aNULL:!MD5
+depth = 1
+dry = no
+type = all
+trash = no
+```
+
+`token` degerini commit etmeyin veya yayimlamayin.
+
+Parametreler:
+
+| Parametre | Anlam |
+| --- | --- |
+| `timeout` | Ag baglantisi ve API istegi zaman asimi, saniye. |
+| `poll` | Asenkron islem durum kontrolleri arasindaki bekleme, saniye. |
+| `retries` | Gecici hatadan sonra API istegi tekrar sayisi. |
+| `delay` | API istegi tekrar denemeleri arasindaki bekleme, saniye. |
+| `limit` | Tek dosya-liste API cagrisinda istenen nesne sayisi. |
+| `chunk` | Dosya islemleri icin okuma/yazma blok boyutu, KB. |
+| `token` | Yandex OAuth token. Zorunlu ve gizli. |
+| `quiet` | `yes` hata cikisini bastirir. |
+| `verbose` | `yes` ayrintili islem cikisini acar. |
+| `debug` | `yes` hata ayiklama cikisini acar. |
+| `async` | `yes` desteklenen asenkron islemlerin bitmesini beklemez. |
+| `rsync` | `yes` `put/get --rsync` sirasinda fazla dosyalari siler. |
+| `no-recursion` | `yes` ic ice dizinlerin yinelemeli islenmesini kapatir. |
+| `no-redirects` | `yes` `download` icin HTTP redirect kullanmaz. |
+| `skip-md5` | Eski parametre, `skip-hash` ile ayni. |
+| `skip-hash` | `yes` md5/sha256 butunluk denetimlerini kapatir. |
+| `threads` | Dizin yukleme/indirme icin worker surec sayisi. `0` havuz yok demektir. |
+| `progress` | `yes` `python-progressbar` varsa progress bar gosterir. |
+| `base-url` | Yandex.Disk REST API temel URL'si. |
+| `app-id` | Yerlesik uygulamanin OAuth client id degeri. |
+| `app-secret` | Yerlesik uygulamanin OAuth client secret degeri. |
+| `ca-file` | HTTPS icin guvenilir CA sertifika dosyasi. Bos ise sertifika dogrulamasi yok. |
+| `ciphers` | HTTPS icin TLS cipher suites. |
+| `depth` | `du` icin dizin boyutu cikti derinligi. |
+| `dry` | `clean` icin `yes`: silmeden nelerin silinecegini gosterir. |
+| `type` | `clean` icin nesne turu: `file`, `dir` veya `all`. |
+| `trash` | `rm` icin `yes`: kalici silme yerine cope tasir. |
 
 ### ⚠️ Onemli ayarlar:
 

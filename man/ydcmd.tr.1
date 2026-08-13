@@ -301,19 +301,21 @@ Dizin belirtilmezse arama kok '/' dizininden baslar.
 Alt komutlar:
 .br
 .B init <local_dir> <remote_dir>
-\- Yerel ve uzak dizinler arasinda esitlemeyi baslatir.
+\- Yerel ve uzak dizinler arasinda esitlemeyi baslatir ve <local_dir>/.ydcmd-sync.cfg olusturur.
 .br
-.B status
+.B status [local_dir]
 \- Guncel esitleme durumunu gosterir.
 .br
-.B pull <remote_dir> <local_dir>
+.B pull <local_dir> [remote_dir]
 \- Yerel dizini uzaktan esitler.
 .br
-.B push <local_dir> <remote_dir>
+.B push <local_dir> [remote_dir]
 \- Uzak dizini yerelden esitler.
 .br
-.B diff <local_dir> <remote_dir>
+.B diff <local_dir> [remote_dir]
 \- Yerel ve uzak dizinler arasindaki farklari gosterir.
+.TP
+init sonrasi filtreler <local_dir>/.ydcmd-sync.cfg icinde ayarlanir: shell-style dosya desenleri icin pattern/include/exclude, tag dosyasi iceren dizinleri atlamak icin tag-filter.
 .SH YAPILANDIRMA
 .TP
 Kolaylık sağlamak için ~/.ydcmd.cfg isimli bir yapılandırma dosyası oluşturmak ve bu dosyaya 0600 veya 0400 izinlerini vermek tavsiye edilir. Dosya biçimi:
