@@ -2766,8 +2766,12 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
         remote_path = yd_remote_path(remote_dir + ("/" + rel_path.replace("\\", "/") if rel_path else ""))
         if rel_path:
             try:
-                yd_create(options, remote_path, True)
-                yd_print("Created directory: {0}".format(remote_path))
+                remote_stat = yd_stat(options, remote_path, True)
+                if remote_stat == None:
+                    yd_create(options, remote_path, True)
+                    yd_print("Created directory: {0}".format(remote_path))
+                elif not remote_stat.isdir():
+                    raise ydError(409, "HTTP-409: Target path points to existing file: {0}".format(remote_path))
             except ydError as e:
                 yd_print("Failed to create directory {0}: {1}".format(remote_path, e.errmsg))
                 failed_count += 1
@@ -3121,6 +3125,9 @@ def yd_sync_cmd(options, args):
         yd_print("  pull [local_dir] [remote_dir]     -- Sync from remote to local")
         yd_print("  push [local_dir] [remote_dir]     -- Sync from local to remote")
         yd_print("  diff [local_dir] [remote_dir]     -- Show differences")
+        yd_print("")
+        yd_print("Options:")
+        yd_print("  --skip-hash                       -- Skip md5/sha256 checks; compare unchanged files by size only")
         return
     
     operation = args.pop(0).lower()
@@ -3713,6 +3720,9 @@ def yd_print_usage(cmd = None):
         yd_print("     {0} sync pull [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync diff [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync status [local_dir]".format(sys.argv[0]))
+        yd_print("")
+        yd_print("Options:")
+        yd_print("     --skip-hash -- skip md5/sha256 checks; compare unchanged files by size only")
         yd_print("")
         yd_print("Config:")
         yd_print("     sync init creates <local_dir>/.ydcmd-sync.cfg")

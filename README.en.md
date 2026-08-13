@@ -386,6 +386,13 @@ If local directory is omitted, the current directory (`.`) is used.
 
 `push` and `pull` skip unchanged files: first by size, then by md5/sha256. If `skip-hash = yes` is enabled, hashes are not checked after size matches.
 
+For one command, enable fast mode without hashes:
+
+```bash
+ydcmd sync push --skip-hash
+ydcmd sync pull --skip-hash
+```
+
 After `sync init`, edit `<local_dir>/.ydcmd-sync.cfg`:
 
 ```ini
