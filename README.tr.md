@@ -384,6 +384,8 @@ ydcmd sync <operation> [options]
 
 Local dizin belirtilmezse guncel dizin (`.`) kullanilir.
 
+`push` ve `pull` degismeyen dosyalari atlar: once boyut, sonra md5/sha256 karsilastirir. `skip-hash = yes` aciksa boyut eslesmesinden sonra hash kontrolu yapilmaz.
+
 `sync init` sonrasi `<local_dir>/.ydcmd-sync.cfg` dosyasini duzenleyin:
 
 ```ini

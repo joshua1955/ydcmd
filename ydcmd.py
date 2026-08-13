@@ -2647,6 +2647,28 @@ def yd_sync_remote_tagged(config, items):
     return bool(tag and tag in items)
 
 
+def yd_sync_same_file(options, local_file, remote_item):
+    if not (remote_item and remote_item.isfile()):
+        return False
+
+    try:
+        if os.path.getsize(local_file) != remote_item.size:
+            return False
+    except OSError:
+        return False
+
+    return yd_check_hash(options, local_file, remote_item.md5, remote_item.sha256)
+
+
+def yd_sync_list_remote(options, remote_dir):
+    try:
+        return yd_list(options, yd_remote_path(remote_dir))
+    except ydError as e:
+        if e.errno == 404:
+            return {}
+        raise e
+
+
 def yd_batch_cmd(options, args):
     """
     Пакетные операции с файлами и папками
@@ -2726,6 +2748,7 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
     yd_print("Batch uploading directory: {0} -> {1}".format(local_dir, remote_dir))
     
     uploaded_count = 0
+    skipped_count = 0
     failed_count = 0
     
     for root, dirs, files in os.walk(local_dir):
@@ -2740,14 +2763,20 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
             name for name in dirs
             if not yd_sync_excluded(sync_config, (rel_path + "/" + name).strip("/"), name)
         ]
+        remote_path = yd_remote_path(remote_dir + ("/" + rel_path.replace("\\", "/") if rel_path else ""))
         if rel_path:
-            remote_path = yd_remote_path(remote_dir + "/" + rel_path.replace("\\", "/"))
             try:
                 yd_create(options, remote_path)
                 yd_print("Created directory: {0}".format(remote_path))
             except ydError as e:
                 yd_print("Failed to create directory {0}: {1}".format(remote_path, e.errmsg))
                 failed_count += 1
+
+        try:
+            remote_items = yd_sync_list_remote(options, remote_path)
+        except ydError as e:
+            yd_print("Failed to list directory {0}: {1}".format(remote_path, e.errmsg))
+            remote_items = {}
         
         # Загружаем файлы
         for file in files:
@@ -2764,6 +2793,12 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
             remote_file_path = yd_remote_path(remote_dir + "/" + rel_file_path.replace("\\", "/"))
             
             try:
+                remote_item = remote_items[file] if file in remote_items else None
+                if yd_sync_same_file(options, local_file, remote_item):
+                    yd_print("Skipped unchanged: {0}".format(rel_file_path))
+                    skipped_count += 1
+                    continue
+
                 yd_put(options, local_file, remote_file_path)
                 yd_print("Uploaded: {0}".format(rel_file_path))
                 uploaded_count += 1
@@ -2774,6 +2809,7 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
     yd_print("")
     yd_print("Batch upload completed:")
     yd_print("  Uploaded: {0} files".format(uploaded_count))
+    yd_print("  Skipped: {0} files".format(skipped_count))
     yd_print("  Failed: {0} files".format(failed_count))
 
 
@@ -2790,6 +2826,7 @@ def yd_batch_download(options, remote_dir, local_dir, sync_config = None, rel_di
     yd_print("Batch downloading directory: {0} -> {1}".format(remote_dir, local_dir))
     
     downloaded_count = 0
+    skipped_count = 0
     failed_count = 0
     
     try:
@@ -2822,8 +2859,13 @@ def yd_batch_download(options, remote_dir, local_dir, sync_config = None, rel_di
                     # Рекурсивно скачиваем поддиректории
                     yd_batch_download(options, remote_path, local_path, sync_config, rel_path)
                 else:
+                    if os.path.exists(local_path) and yd_sync_same_file(options, local_path, file_info):
+                        yd_print("Skipped unchanged: {0}".format(rel_path))
+                        skipped_count += 1
+                        continue
+
                     yd_get(options, remote_path, local_path)
-                    yd_print("Downloaded: {0}".format(filename))
+                    yd_print("Downloaded: {0}".format(rel_path))
                     downloaded_count += 1
             except ydError as e:
                 yd_print("Failed to download {0}: {1}".format(filename, e.errmsg))
@@ -2836,6 +2878,7 @@ def yd_batch_download(options, remote_dir, local_dir, sync_config = None, rel_di
     yd_print("")
     yd_print("Batch download completed:")
     yd_print("  Downloaded: {0} files".format(downloaded_count))
+    yd_print("  Skipped: {0} files".format(skipped_count))
     yd_print("  Failed: {0} files".format(failed_count))
 
 
@@ -3662,7 +3705,7 @@ def yd_print_usage(cmd = None):
         yd_print("")
     elif cmd == "sync":
         yd_print("Usage:")
-        yd_print("     {0} sync init <local_dir> <remote_dir>".format(sys.argv[0]))
+        yd_print("     {0} sync init [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync push [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync pull [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync diff [local_dir] [remote_dir]".format(sys.argv[0]))
