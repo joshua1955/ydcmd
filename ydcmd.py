@@ -3835,4 +3835,6 @@ if __name__ == "__main__":
             sys.stderr.write("{0}\n".format(e))
         sys.exit(1)
     except KeyboardInterrupt:
-        sys.exit(1)
+        if not options.quiet:
+            sys.stderr.write("Operation interrupted\n")
+        sys.exit(130)
