@@ -2766,7 +2766,7 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
         remote_path = yd_remote_path(remote_dir + ("/" + rel_path.replace("\\", "/") if rel_path else ""))
         if rel_path:
             try:
-                yd_create(options, remote_path)
+                yd_create(options, remote_path, True)
                 yd_print("Created directory: {0}".format(remote_path))
             except ydError as e:
                 yd_print("Failed to create directory {0}: {1}".format(remote_path, e.errmsg))
@@ -2798,6 +2798,9 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
                     yd_print("Skipped unchanged: {0}".format(rel_file_path))
                     skipped_count += 1
                     continue
+
+                if remote_item and remote_item.isfile():
+                    yd_delete(options, remote_file_path, True)
 
                 yd_put(options, local_file, remote_file_path)
                 yd_print("Uploaded: {0}".format(rel_file_path))
