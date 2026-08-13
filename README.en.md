@@ -17,7 +17,7 @@ Console client for working with Yandex.Disk cloud storage via REST API.
 
 ### 🚀 Result:
 - ✅ Full compatibility with current Yandex.Disk API
-- ✅ Works with Python 2.7+ and Python 3.x
+- ✅ Works with Python 3.x
 - ✅ Correct OAuth token handling
 - ✅ Stable operation on Windows/Linux/macOS
 
@@ -66,6 +66,8 @@ After that you can immediately use all ydcmd commands!
 2. Set permissions: `Yandex.Disk REST API`
 3. Enable `Development client`
 4. Use the received `client_id` for authorization
+
+More about [obtain a token manually](https://yandex.ru/dev/id/doc/en/tokens/debug-token).
 
 ## Usage
 
@@ -134,7 +136,7 @@ If target object is not specified, root directory of storage will be used.
 ### Deleting file or directory
 
 ```
-ydcmd rm <disk:/object>
+ydcmd rm <disk:/object1> [disk:/object2] ...
 ```
 
 **Options**:
@@ -209,13 +211,13 @@ If target file name is not specified, file name in storage will be used. If targ
 ### Output file from storage to stdout
 
 ```
-ydcmd cat <disk:/object>
+ydcmd cat <disk:/object1> [disk:/object2] ...
 ```
 
 ### Creating directory
 
 ```
-ydcmd mkdir <disk:/path>
+ydcmd mkdir <disk:/path1> [disk:/path2] ...
 ```
 
 ### Getting metadata about object
@@ -253,7 +255,7 @@ If parameter N is not set, default value from REST API will be used.
 ### Publishing object
 
 ```
-ydcmd share <disk:/object>
+ydcmd share <disk:/object1> [disk:/object2] ...
 ```
 
 Command returns object name in storage and link to it.
@@ -261,7 +263,7 @@ Command returns object name in storage and link to it.
 ### Closing access
 
 ```
-ydcmd revoke <disk:/object>
+ydcmd revoke <disk:/object1> [disk:/object2] ...
 ```
 
 ### Estimating occupied space

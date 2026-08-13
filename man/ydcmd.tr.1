@@ -1,319 +1,319 @@
-.TH ydcmd 1 "22 Temmuz 2014"
+.TH ydcmd 1 "13 Agustos 2026"
 .nh
 .ad left
-.SH ADI
-ydcmd \- REST API vasıtasıyla Yandex.Disk bulut depolama ile etkileşim için komut satırı istemcisidir.
-.SH SÖZDİZİMİ
+.SH AD
+ydcmd \- REST API uzerinden Yandex.Disk bulut depolama ile calismak icin komut satiri istemcisi.
+.SH SOZDIZIMI
 .B ydcmd
 .RI [ command ] " " [ options ] " " [ args ]
 .SH KOMUTLAR
 .TP
 .B help
-Uygulama komutları ve seçenekleri hakkında kısa bilgi alma.
+Uygulama komutlari ve secenekleri hakkinda kisa bilgi alir.
 .TP
 .B ls
-Dosya ve dizinlerin listesini alma.
+Dosya ve dizin listesini alir.
 .TP
 .B rm
-Dosya veya dizin silme.
+Dosya veya dizin siler.
 .TP
 .B cp
-Dosya veya dizin kopyalama.
+Dosya veya dizin kopyalar.
 .TP
 .B mv
-Dosya veya dizin taşıma.
+Dosya veya dizin tasir.
 .TP
 .B put
-Dosya veya dizini depoya yükleme.
+Dosya veya dizini depolamaya yukler.
 .TP
 .B get
-Dosya veya dizini depodan alma.
+Dosya veya dizini depolamadan alir.
 .TP
 .B cat
-Display a file from the storage to stdout.
+Depolamadaki dosyayi stdout'a yazdirir.
 .TP
 .B mkdir
-Dizin oluşturma.
+Dizin olusturur.
 .TP
 .B stat
-Nesne hakkında meta-bilgi alma.
+Nesne hakkinda meta veri alir.
 .TP
 .B info
-Depo hakkında meta-bilgi alma.
+Depolama hakkinda meta veri alir.
 .TP
 .B last
-Son yüklenen dosyalar hakkında meta-bilgi alma.
+Son yuklenen dosyalar hakkinda meta veri alir.
 .TP
 .B share
-Yayın nesnenin (daha doğrudan bağlantılar).
+Nesneyi yayimlar (dogrudan baglanti alir).
 .TP
 .B revoke
-Kapanış erişim yayımlanmış, daha önce nesne.
+Daha once yayimlanan nesneye erisimi kapatir.
 .TP
 .B du
-Dosyaların hafızada kapladığı alanı hesaplama.
+Depolamada dosyalarin kapladigi alani hesaplar.
 .TP
 .B clean
-Dosya ve dizinleri temizleme.
+Dosya ve dizinleri temizler.
 .TP
 .B restore
-Restores file or directory from trash.
+Dosya veya dizini cop kutusundan geri yukler.
 .TP
 .B download
-Download file from internet to storage.
+Internetten depolamaya dosya indirir.
 .TP
 .B token
-Almak OAuth token uygulaması için.
+Uygulamanin calismasi icin OAuth token alir.
 .TP
 .B batch
-Batch operations: upload, download, delete, move, copy multiple files or directories.
+Toplu islemler: birden cok dosya veya dizin yukleme, indirme, silme, tasima, kopyalama.
 .TP
 .B stats
-Show storage statistics and usage monitoring.
+Depolama istatistiklerini ve kullanim izlemesini gosterir.
 .TP
 .B find
-Search files by name pattern (supports wildcards).
+Dosyalari ad desenine gore arar (joker karakterleri destekler).
 .TP
 .B sync
-Advanced synchronization operations: init, status, pull, push, diff.
-.SH SEÇENEKLER
+Gelismis esitleme islemleri: init, status, pull, push, diff.
+.SH SECENEKLER
 .TP
 .B --config=<S>
-Config filename (if not default).
+Yapilandirma dosyasi adi (varsayilan degilse).
 .TP
 .B --timeout=<N>
-Ağ bağlantısı kurmak için zaman aşımı (saniye).
+Ag baglantisi kurma zaman asimi (saniye).
 .TP
 .B --retries=<N>
-Hata kodu almadan önce API yöntemini çağırma denemelerinin sayısı.
+Hata kodu dondurmeden once API metodunu cagirma denemesi sayisi.
 .TP
 .B --delay=<N>
-Api metodunu çağırma denemeleri arasındaki zaman aşımı (saniye).
+API metodunu cagirma denemeleri arasindaki zaman asimi (saniye).
 .TP
 .B --limit=<N>
-Dosya ve dizinlerin listesini alma metodunun bir çağrısı ile geri dönen öge sayısı.
+Dosya ve dizin listesini almak icin tek metod cagrisinda donen oge sayisi.
 .TP
 .B --token=<S>
-OAuth belirteci (yapılandırma dosyasının içinde ya da ortam değişkeni ile YDCMD_TOKEN güvenlik hedefleri için belirtilmiş olmalı). Hata ayıklama belirteci edinme talimatları sonraki sayfada bulunabilir http://api.yandex.com/oauth/doc/dg/tasks/get-oauth-token.xml
+OAuth token (guvenlik nedeniyle yapilandirma dosyasinda veya YDCMD_TOKEN ortam degiskeniyle belirtilmesi onerilir). Token almak ve kaydetmek icin yerlesik token komutunu kullanin.
 .TP
 .B --quiet
-Hatta raporu önleme.
+Hata cikisini bastirir.
 .TP
 .B --verbose
-Genişletilmiş bilgi görüntüleme.
+Genisletilmis bilgi yazdirir.
 .TP
 .B --debug
-Hata ayıklama bilgisi görüntüleme.
+Hata ayiklama bilgisi yazdirir.
 .TP
 .B --chunk=<N>
-Girdi/çıktı işlemleri için bilgi bloğunun boyutu (KB).
+Giris/cikis islemleri icin veri blogu boyutu (KB).
 .TP
 .B --ca-file=<S>
-Güvenilir sertifika merkezlerinin sertifikaları ile dosya adı (değer boş ise, sertifika onayı gerçekleştirilemez).
+Guvenilir sertifika merkezlerinin sertifikalarini iceren dosya adi (bos ise sertifika dogrulamasi yapilmaz).
 .TP
 .B --ciphers=<S>
-Şifreleme algoritmaları dizisi (bak ciphers(1)).
+Sifreleme algoritmalari kumesi (bkz. ciphers(1)).
 .TP
 .B --version
-Print version and exit.
-.SH EK SEÇENEKLER
+Surumu yazdirir ve cikar.
+.SH EK SECENEKLER
 .SS ls
 .TP
 .B --human
-İnsan tarafından okunabilir türde dosyanın boyutunu görüntüleme.
+Dosya boyutunu insan tarafindan okunabilir bicimde yazdirir.
 .TP
 .B --short
-Ek bilgiler olmadan dosya ve dizinlerin listesini görüntüleme (satır başına bir ad).
+Dosya ve dizin listesini ek bilgi olmadan yazdirir (satir basina bir ad).
 .TP
 .B --long
-Genişletilmiş liste gösterme (oluşturma zamanı, değişiklik zamanı, boyut, dosya adı).
+Genisletilmis liste gosterir (olusturma zamani, degistirme zamani, boyut, dosya adi).
 .TP
-Eğer hedef nesne belirtilmemişse, deponun kök dizini kullanılacaktır.
+Hedef nesne belirtilmezse depolamanin kok dizini kullanilir.
 .SS rm
 .TP
 .B --trash
-Remove to trash folder.
+Cop kutusuna siler.
 .TP
 .B --poll=<N>
-Asenkron işlem sırasında durum kontrolleri arasındaki süre (saniye).
+Asenkron islem sirasinda durum sorgulamalari arasindaki sure (saniye).
 .TP
 .B --async
-İşlem sonlandırmayı beklemeden komut (poll) çalıştırma.
+Komutu islemin tamamlanmasini (poll) beklemeden calistirir.
 .TP
-Dosyalar kalıcı olarak silinir. Dizinler özyinelemeli silinir (alt dosya ve dizinler dahil).
+Dosyalar kalici olarak silinir. Dizinler yinelemeli olarak silinir (ic ice dosya ve dizinler dahil).
 .SS cp
 .TP
 .B --poll=<N>
-Asenkron işlem sırasında durum kontrolleri arasındaki süre (saniye).
+Asenkron islem sirasinda durum sorgulamalari arasindaki sure (saniye).
 .TP
 .B --async
-İşlem sonlandırmayı beklemeden komut (poll) çalıştırma.
+Komutu islemin tamamlanmasini (poll) beklemeden calistirir.
 .TP
-İsim çakışması durumunda, dizinler ve dosyalar üzerine yazılacak. Dizinler özyinelemeli silinir (alt dosya ve dizinler dahil).
+Ad cakismasi durumunda dizinler ve dosyalarin uzerine yazilir. Dizinler yinelemeli olarak kopyalanir (ic ice dosya ve dizinler dahil).
 .SS mv
 .TP
 .B --poll=<N>
-Asenkron işlem sırasında durum kontrolleri arasındaki süre (saniye).
+Asenkron islem sirasinda durum sorgulamalari arasindaki sure (saniye).
 .TP
 .B --async
-İşlem sonlandırmayı beklemeden komut (poll) çalıştırma.
+Komutu islemin tamamlanmasini (poll) beklemeden calistirir.
 .TP
-İsim çakışması durumunda, dizinler ve dosyalar üzerine yazılacak.
+Ad cakismasi durumunda dizinler ve dosyalarin uzerine yazilir.
 .SS put
 .TP
 .B --rsync
-Depo içerisindeki yerel ağaç ile dosya ve dizin ağaçlarını senkronize eder.
+Depolamadaki dosya ve dizin agacini yerel agacla esitler.
 .TP
 .B --no-recursion
-Avoid descending automatically in directories.
+Alt dizinlere otomatik inmeyi engeller.
 .TP
 .B --no-recursion-tag=<S>
-Avoid descending in directories containing file.
+Belirtilen dosyayi iceren dizinlerde alt dizinlere inmeyi engeller.
 .TP
 .B --exclude-tag=<S>
-Exclude contents of directories containing file.
+Belirtilen dosyayi iceren dizinlerin icerigini haric tutar.
 .TP
 .B --skip-hash
-Skip md5/sha256 integrity checks.
+md5/sha256 butunluk denetimlerini atlar.
 .TP
 .B --threads=<N>
-Number of worker processes.
+Isci surec sayisi.
 .TP
 .B --iconv=<S>
-Try to restore file or directory names from the specified encoding if necessary (for example cp1254).
+Gerekirse dosya veya dizin adlarini belirtilen kodlamadan geri yuklemeyi dener (ornegin cp1254).
 .TP
 .B --progress
-Show progress (it is recommended to install python-progressbar module).
+Ilerlemeyi gosterir (python-progressbar modulunun kurulmasi onerilir).
 .TP
-Eğer hedef nesne belirtilmemişse, dosya yüklemesi için deponun kök dizini kullanılacaktır. Eğer hedef nesne, dizini ("/" ile biten) belirtirse, kaynak dosyasının adı dizinin adına eklenmiş olacaktır. Eğer hedef nesne varsa, onay istemi olmadan üzerine yazılabilir olacaktır. Sembolik bağlantılar göz ardı edilir.
+Hedef nesne belirtilmezse dosya yuklemek icin depolamanin kok dizini kullanilir. Hedef nesne dizini belirtiyorsa ('/' ile bitiyorsa), kaynak dosya adi dizin adina eklenir. Hedef nesne varsa onay istemeden uzerine yazilir. Sembolik baglantilar yok sayilir.
 .SS get
 .TP
 .B --rsync
-Dosya ve dizinlerin yerel ağacını depo içerisindeki ağaç ile senkronize eder.
+Yerel dosya ve dizin agacini depolamadaki agacla esitler.
 .TP
 .B --no-recursion
-Avoid descending automatically in directories.
+Alt dizinlere otomatik inmeyi engeller.
 .TP
 .B --skip-hash
-Skip md5/sha256 integrity checks.
+md5/sha256 butunluk denetimlerini atlar.
 .TP
 .B --threads=<N>
-Number of worker processes.
+Isci surec sayisi.
 .TP
 .B --progress
-Show progress (it is recommended to install python-progressbar module).
+Ilerlemeyi gosterir (python-progressbar modulunun kurulmasi onerilir).
 .TP
-Eğer hedef dosyasının adı belirtilmemişse, depoda var olan adı kullanılacaktır. Eğer hedef nesne varsa, onay istemi olmadan üzerine yazılabilir olacaktır.
+Hedef dosya adi belirtilmezse depolamadaki dosya adi kullanilir. Hedef nesne varsa onay istemeden uzerine yazilir.
 .SS info
 .TP
 .B --long
-İnsan tarafından okunabilir türde göstermek yerine bayt'larla göstermek.
+Insan tarafindan okunabilir bicim yerine bayt olarak gosterir.
 .SS last
 .TP
 .B --human
-İnsan tarafından okunabilir türde dosyanın boyutunu görüntüleme.
+Dosya boyutunu insan tarafindan okunabilir bicimde yazdirir.
 .TP
 .B --short
-Ek bilgiler olmadan dosyaların listesini görüntüleme (satır başına bir isim).
+Dosya listesini ek bilgi olmadan yazdirir (satir basina bir ad).
 .TP
 .B --long
-Genişletilmiş liste gösterme (oluşturma zamanı, değişiklik zamanı, boyut, dosya adı).
+Genisletilmis liste gosterir (olusturma zamani, degistirme zamani, boyut, dosya adi).
 .TP
-Eğer N argüman belirtilmemişse, REST API'nin varsayılan değeri kullanılacaktır.
+N argumani belirtilmezse REST API'nin varsayilan degeri kullanilir.
 .SS du
 .TP
 .B --depth=<N>
-Seviye N'e kadar olan dizinlerin boyutlarını göstermek.
+N seviyesine kadar dizin boyutlarini gosterir.
 .TP
 .B --long
-İnsan tarafından okunabilir türde göstermek yerine bayt'larla göstermek.
+Insan tarafindan okunabilir bicim yerine bayt olarak gosterir.
 .TP
-Eğer hedef nesne belirtilmemişse, deponun kök dizini kullanılacaktır.
+Hedef nesne belirtilmezse depolamanin kok dizini kullanilir.
 .SS clean
 .TP
 .B --dry
-Silmek yerine, silinecek nesnelerin listesini göstermek.
+Silmek yerine silinecek nesnelerin listesini gosterir.
 .TP
 .B --type=<S>
-Silinecek nesnelerin türü ('file' - dosyalar, 'dir' - dizinler, 'all' - hepsi).
+Silinecek nesnelerin turu ('file' - dosyalar, 'dir' - dizinler, 'all' - tumu).
 .TP
 .B --keep=<S>
-Kaydedilmesi gereken nesnelerin seçim kriterleri:
+Korunmasi gereken nesneleri secme olcutu:
 .br
-* Verinin silinmesi gereken tarihe kadar seçilmesi için ISO formatındaki tarih satırı kullanılabilir (örneğin '2014-02-12T12:19:05+04:00');
+* Verilerin silinmesi gereken tarihten onceki tarihi secmek icin ISO biciminde tarih dizesi kullanilabilir (ornegin '2014-02-12T12:19:05+04:00');
 .br
-* Göreceli zamanı seçmek için sayı ve boyut kullanılabilir (örneğin, 7d', '4w', '1m', '1y');
+* Goreli zamani secmek icin sayi ve olcu kullanilabilir (ornegin '7d', '4w', '1m', '1y');
 .br
-* Kopya sayısını seçmek için, boyut olmadan sayı kullanılabilir (örneğin, '31').
+* Kopya sayisini secmek icin olcusuz sayi kullanilabilir (ornegin '31').
 .SS restore
 .TP
 .B --poll=<N>
-Interval (in seconds) between status polls during an asynchronous operation.
+Asenkron islem sirasinda durum sorgulamalari arasindaki sure (saniye).
 .TP
 .B --async
-Runs a command without waiting for operation to terminate (poll).
+Komutu islemin tamamlanmasini (poll) beklemeden calistirir.
 .TP
-In case of name coincidence, directories and files will be overwritten. Directories are restored recursively (including sub folders and sub directories).
+Ad cakismasi durumunda dizinler ve dosyalarin uzerine yazilir. Dizinler yinelemeli olarak geri yuklenir (ic ice dosya ve dizinler dahil).
 .SS download
 .TP
 .B --poll=<N>
-Interval (in seconds) between status polls during an asynchronous operation.
+Asenkron islem sirasinda durum sorgulamalari arasindaki sure (saniye).
 .TP
 .B --async
-Runs a command without waiting for operation to terminate (poll).
+Komutu islemin tamamlanmasini (poll) beklemeden calistirir.
 .TP
 .B --no-redirects
-Disable redirects.
+Yonlendirmeleri devre disi birakir.
 .TP
-If target is not specified, target will be root '/' directory with file name extracted from URL (if possible).
+Hedef belirtilmezse hedef, URL'den cikarilan dosya adiyla (mumkunse) kok '/' dizini olur.
 .SS batch
 .TP
-Sub-commands:
+Alt komutlar:
 .br
 .B upload <local_dir> [remote_dir]
-\- Upload entire directory tree to storage.
+\- Tum dizin agacini depolamaya yukler.
 .br
 .B download <remote_dir> [local_dir]
-\- Download entire directory tree from storage.
+\- Tum dizin agacini depolamadan indirir.
 .br
 .B delete <file1> [file2] ...
-\- Delete multiple files from storage.
+\- Depolamadan birden cok dosyayi siler.
 .br
 .B move <src1> [src2] ... <dest>
-\- Move multiple files to destination directory.
+\- Birden cok dosyayi hedef dizine tasir.
 .br
 .B copy <src1> [src2] ... <dest>
-\- Copy multiple files to destination directory.
+\- Birden cok dosyayi hedef dizine kopyalar.
 .SS stats
 .TP
 .B --detailed
-Show detailed statistics including file counts and recent uploads.
+Dosya sayilari ve son yuklemeler dahil ayrintili istatistikleri gosterir.
 .TP
-Displays total, used and free space with a visual progress bar.
+Toplam, kullanilan ve bos alani gorsel ilerleme cubuguyla gosterir.
 .SS find
 .TP
 .B ydcmd find <pattern> [directory]
-Search for files matching the given pattern (supports wildcards such as *, ?).
+Verilen desenle eslesen dosyalari arar (*, ? gibi joker karakterleri destekler).
 .TP
-If directory is not specified, search starts from the root '/' directory.
+Dizin belirtilmezse arama kok '/' dizininden baslar.
 .SS sync
 .TP
-Sub-commands:
+Alt komutlar:
 .br
 .B init <local_dir> <remote_dir>
-\- Initialize synchronization between local and remote directories.
+\- Yerel ve uzak dizinler arasinda esitlemeyi baslatir.
 .br
 .B status
-\- Show current synchronization status.
+\- Guncel esitleme durumunu gosterir.
 .br
 .B pull <remote_dir> <local_dir>
-\- Synchronize local directory from remote.
+\- Yerel dizini uzaktan esitler.
 .br
 .B push <local_dir> <remote_dir>
-\- Synchronize remote directory from local.
+\- Uzak dizini yerelden esitler.
 .br
 .B diff <local_dir> <remote_dir>
-\- Show differences between local and remote directories.
+\- Yerel ve uzak dizinler arasindaki farklari gosterir.
 .SH YAPILANDIRMA
 .TP
 Kolaylık sağlamak için ~/.ydcmd.cfg isimli bir yapılandırma dosyası oluşturmak ve bu dosyaya 0600 veya 0400 izinlerini vermek tavsiye edilir. Dosya biçimi:

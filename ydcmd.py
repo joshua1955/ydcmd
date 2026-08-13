@@ -2395,7 +2395,7 @@ def yd_du_cmd(options, args):
         name = name[5:-1]
         if len(name) == 0:
             name = "/"
-        if options.human:
+        if not options.long:
             yd_print("{0:>7}  {1}".format(yd_human(size), name))
         else:
             yd_print("{0:>12}  {1}".format(size, name))

@@ -1,5 +1,5 @@
 Name:          ydcmd
-Version:       2.12.2
+Version:       2.13.1
 Release:       1
 BuildArch:     noarch
 Summary:       Command line Yandex.Disk client
@@ -95,5 +95,5 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Mon Sep 23 2024 Anton Batenev <antonbatenev@yandex.ru> 2.12.2-1
+* Mon Sep 23 2024 A K <mrantidod@gmail.com> 2.13.1
 - Initial RPM release
