@@ -378,9 +378,11 @@ ydcmd sync <operation> [options]
 
 * `init <local_dir> <remote_dir>` - esitlemeyi baslat ve `<local_dir>/.ydcmd-sync.cfg` olustur;
 * `status [local_dir]` - esitleme durumunu goster;
-* `pull <local_dir> [remote_dir]` - uzaktan yerele esitle;
-* `push <local_dir> [remote_dir]` - yerelden uzaga esitle;
-* `diff <local_dir> [remote_dir]` - dizinler arasindaki farklari goster.
+* `pull [local_dir] [remote_dir]` - uzaktan yerele esitle;
+* `push [local_dir] [remote_dir]` - yerelden uzaga esitle;
+* `diff [local_dir] [remote_dir]` - dizinler arasindaki farklari goster.
+
+Local dizin belirtilmezse guncel dizin (`.`) kullanilir.
 
 `sync init` sonrasi `<local_dir>/.ydcmd-sync.cfg` dosyasini duzenleyin:
 

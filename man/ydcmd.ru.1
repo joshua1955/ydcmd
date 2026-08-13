@@ -306,14 +306,16 @@ OAuth токен (в целях безопасности рекомендует�
 .B status [local_dir]
 \- Показать текущий статус синхронизации.
 .br
-.B pull <local_dir> [remote_dir]
+.B pull [local_dir] [remote_dir]
 \- Синхронизировать локальную директорию из удалённой.
 .br
-.B push <local_dir> [remote_dir]
+.B push [local_dir] [remote_dir]
 \- Синхронизировать удалённую директорию из локальной.
 .br
-.B diff <local_dir> [remote_dir]
+.B diff [local_dir] [remote_dir]
 \- Показать различия между локальной и удалённой директориями.
+.TP
+Если local_dir не указан, используется текущая директория '.'.
 .TP
 После init фильтры задаются в <local_dir>/.ydcmd-sync.cfg: pattern/include/exclude для shell-style шаблонов файлов и tag-filter для пропуска директорий с tag-файлом.
 .SH КОНФИГУРАЦИЯ

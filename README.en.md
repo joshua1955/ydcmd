@@ -378,9 +378,11 @@ ydcmd sync <operation> [options]
 
 * `init <local_dir> <remote_dir>` - initialize synchronization and create `<local_dir>/.ydcmd-sync.cfg`;
 * `status [local_dir]` - show sync status;
-* `pull <local_dir> [remote_dir]` - sync from remote to local;
-* `push <local_dir> [remote_dir]` - sync from local to remote;
-* `diff <local_dir> [remote_dir]` - show differences between directories.
+* `pull [local_dir] [remote_dir]` - sync from remote to local;
+* `push [local_dir] [remote_dir]` - sync from local to remote;
+* `diff [local_dir] [remote_dir]` - show differences between directories.
+
+If local directory is omitted, the current directory (`.`) is used.
 
 After `sync init`, edit `<local_dir>/.ydcmd-sync.cfg`:
 

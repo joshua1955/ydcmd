@@ -1312,6 +1312,15 @@ def yd_create(options, path, silent = False):
             raise e
 
 
+def yd_ensure_parent_dir(options, path):
+    """
+    Создание родительской директории для файла в хранилище.
+    """
+    parent = os.path.dirname(path)
+    if parent and not (parent == "disk:" or parent == "app:" or parent == "trash:"):
+        yd_create(options, parent, True)
+
+
 def yd_publish(options, path):
     """
     Публикация объекта (объект становится доступен по прямой ссылке)
@@ -1476,6 +1485,7 @@ def yd_put(options, source, target):
         raise ydError(401, "OAuth token is required")
     
     yd_verbose("Transfer: {0} ({1}) -> {2}".format(source, yd_human(os.path.getsize(source)), target), options.verbose)
+    yd_ensure_parent_dir(options, target)
 
     retry = 0
     while True:
@@ -1483,6 +1493,17 @@ def yd_put(options, source, target):
             yd_put_retry(options, source, target)
             break
         except (ydURLError, ydBadStatusLine, ydCannotSendRequest, ssl.SSLError, socket.error, ydError) as e:
+            if isinstance(e, ydError) and e.errno == 409:
+                stat = yd_stat(options, target, True)
+                if stat and stat.isdir():
+                    raise ydError(409, "HTTP-409: Target path points to existing directory: {0}".format(target))
+                yd_delete(options, target, True)
+                retry += 1
+                yd_debug("Retry {0}/{1} after upload conflict: {2}".format(retry, options.retries, e), options.debug)
+                if retry >= options.retries:
+                    raise ydError(1, e)
+                time.sleep(options.poll)
+                continue
             yd_can_query_retry(e)
             retry += 1
             yd_debug("Retry {0}/{1}: {2}".format(retry, options.retries, e), options.debug)
@@ -3051,9 +3072,9 @@ def yd_sync_cmd(options, args):
         yd_print("Operations:")
         yd_print("  init <local_dir> <remote_dir>     -- Initialize sync")
         yd_print("  status [local_dir]                -- Show sync status")
-        yd_print("  pull <local_dir> [remote_dir]     -- Sync from remote to local")
-        yd_print("  push <local_dir> [remote_dir]     -- Sync from local to remote")
-        yd_print("  diff <local_dir> [remote_dir]     -- Show differences")
+        yd_print("  pull [local_dir] [remote_dir]     -- Sync from remote to local")
+        yd_print("  push [local_dir] [remote_dir]     -- Sync from local to remote")
+        yd_print("  diff [local_dir] [remote_dir]     -- Show differences")
         return
     
     operation = args.pop(0).lower()
@@ -3078,13 +3099,14 @@ def yd_sync_cmd(options, args):
         yd_sync_status(options, local_dir, sync_config)
         
     elif operation == "pull":
-        if len(args) < 1:
-            yd_print("Error: Local directory required")
-            return
         if len(args) > 2:
             yd_print("Error: Too many arguments")
             return
-        if len(args) == 1:
+        if len(args) == 0:
+            local_dir = "."
+            sync_config = yd_load_sync_config(local_dir)
+            remote_dir = sync_config["remote-dir"]
+        elif len(args) == 1:
             local_dir = args.pop(0)
             sync_config = yd_load_sync_config(local_dir)
             remote_dir = sync_config["remote-dir"]
@@ -3101,25 +3123,23 @@ def yd_sync_cmd(options, args):
         yd_sync_pull(options, remote_dir, local_dir, sync_config)
         
     elif operation == "push":
-        if len(args) < 1:
-            yd_print("Error: Local directory required")
-            return
         if len(args) > 2:
             yd_print("Error: Too many arguments")
             return
-        local_dir = args.pop(0)
+        local_dir = args.pop(0) if args else "."
         remote_dir = args.pop(0) if args else None
         sync_config = yd_load_sync_config(local_dir, remote_dir)
         yd_sync_push(options, local_dir, sync_config["remote-dir"], sync_config)
         
     elif operation == "diff":
-        if len(args) < 1:
-            yd_print("Error: Local directory required")
-            return
         if len(args) > 2:
             yd_print("Error: Too many arguments")
             return
-        if len(args) == 1:
+        if len(args) == 0:
+            local_dir = "."
+            sync_config = yd_load_sync_config(local_dir)
+            remote_dir = sync_config["remote-dir"]
+        elif len(args) == 1:
             local_dir = args.pop(0)
             sync_config = yd_load_sync_config(local_dir)
             remote_dir = sync_config["remote-dir"]
@@ -3643,9 +3663,9 @@ def yd_print_usage(cmd = None):
     elif cmd == "sync":
         yd_print("Usage:")
         yd_print("     {0} sync init <local_dir> <remote_dir>".format(sys.argv[0]))
-        yd_print("     {0} sync push <local_dir> [remote_dir]".format(sys.argv[0]))
-        yd_print("     {0} sync pull <local_dir> [remote_dir]".format(sys.argv[0]))
-        yd_print("     {0} sync diff <local_dir> [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync push [local_dir] [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync pull [local_dir] [remote_dir]".format(sys.argv[0]))
+        yd_print("     {0} sync diff [local_dir] [remote_dir]".format(sys.argv[0]))
         yd_print("     {0} sync status [local_dir]".format(sys.argv[0]))
         yd_print("")
         yd_print("Config:")

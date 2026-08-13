@@ -306,14 +306,16 @@ Sub-commands:
 .B status [local_dir]
 \- Show current synchronization status.
 .br
-.B pull <local_dir> [remote_dir]
+.B pull [local_dir] [remote_dir]
 \- Synchronize local directory from remote.
 .br
-.B push <local_dir> [remote_dir]
+.B push [local_dir] [remote_dir]
 \- Synchronize remote directory from local.
 .br
-.B diff <local_dir> [remote_dir]
+.B diff [local_dir] [remote_dir]
 \- Show differences between local and remote directories.
+.TP
+If local_dir is omitted, current directory '.' is used.
 .TP
 After init, filters can be set in <local_dir>/.ydcmd-sync.cfg: pattern/include/exclude for shell-style file patterns and tag-filter to skip directories containing a tag file.
 .SH CONFIGURATION
