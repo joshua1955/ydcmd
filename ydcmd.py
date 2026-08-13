@@ -2481,7 +2481,7 @@ def yd_save_config(filename, config):
     Сохранение конфигурации в INI файл
 
     Аргументы:
-        filename (str) -- Имя файла конфигурации
+        filename (str)  -- Имя файла конфигурации
         config   (dict) -- Конфигурация для сохранения
     """
     import os
@@ -2638,10 +2638,10 @@ def yd_batch_cmd(options, args):
         yd_print("Usage: ydcmd batch <operation> [options] [args]")
         yd_print("")
         yd_print("Operations:")
-        yd_print("  upload <local_dir> [remote_dir]  -- Upload entire directory")
+        yd_print("  upload <local_dir> [remote_dir]   -- Upload entire directory")
         yd_print("  download <remote_dir> [local_dir] -- Download entire directory")
-        yd_print("  delete <file1> [file2] ...       -- Delete multiple files")
-        yd_print("  move <src1> <src2> ... <dest>    -- Move multiple files to destination")
+        yd_print("  delete <file1> [file2] ...        -- Delete multiple files")
+        yd_print("  move <src1> <src2> ... <dest>     -- Move multiple files to destination")
         yd_print("  copy <src1> <src2> ... <dest>     -- Copy multiple files to destination")
         return
 
@@ -2981,8 +2981,8 @@ def yd_find_cmd(options, args):
         yd_print("")
         yd_print("Examples:")
         yd_print("  ydcmd find *.txt                    -- Find all .txt files")
-        yd_print("  ydcmd find \"*.mp4\" /Videos          -- Find .mp4 files in Videos folder")
-        yd_print("  ydcmd find \"document*\"             -- Find files starting with 'document'")
+        yd_print("  ydcmd find \"*.mp4\" /Videos        -- Find .mp4 files in Videos folder")
+        yd_print("  ydcmd find \"document*\"            -- Find files starting with 'document'")
         return
     
     pattern = args.pop(0)
@@ -3050,10 +3050,10 @@ def yd_sync_cmd(options, args):
         yd_print("")
         yd_print("Operations:")
         yd_print("  init <local_dir> <remote_dir>     -- Initialize sync")
-        yd_print("  status [local_dir]                 -- Show sync status")
+        yd_print("  status [local_dir]                -- Show sync status")
         yd_print("  pull <local_dir> [remote_dir]     -- Sync from remote to local")
         yd_print("  push <local_dir> [remote_dir]     -- Sync from local to remote")
-        yd_print("  diff <local_dir> [remote_dir]      -- Show differences")
+        yd_print("  diff <local_dir> [remote_dir]     -- Show differences")
         return
     
     operation = args.pop(0).lower()
