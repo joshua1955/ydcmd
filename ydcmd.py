@@ -714,6 +714,21 @@ def yd_print(msg):
     sys.stdout.write("{0}\n".format(msg))
 
 
+def yd_format_elapsed(seconds):
+    if seconds < 60:
+        return "{0:.2f}s".format(seconds)
+
+    minutes = int(seconds // 60)
+    seconds = seconds - minutes * 60
+    return "{0}m {1:.2f}s".format(minutes, seconds)
+
+
+def yd_print_elapsed(start_time, options):
+    if not options.quiet:
+        sys.stdout.flush()
+        sys.stderr.write("Elapsed: {0}\n".format(yd_format_elapsed(time.time() - start_time)))
+
+
 def yd_verbose(errmsg, flag = True):
     """
     Вывод расширенной информации
@@ -3780,6 +3795,7 @@ if __name__ == "__main__":
     if options.cafile == None:
         yd_verbose("Unsafe HTTPS connection - ca-file not used", options.verbose)
 
+    start_time = time.time()
     try:
         if command == "ls":
             yd_ls_cmd(options, args)
@@ -3839,3 +3855,5 @@ if __name__ == "__main__":
         if not options.quiet:
             sys.stderr.write("Operation interrupted\n")
         sys.exit(130)
+    finally:
+        yd_print_elapsed(start_time, options)
