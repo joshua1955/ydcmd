@@ -385,6 +385,7 @@ ydcmd sync <operation> [options]
 Local dizin belirtilmezse guncel dizin (`.`) kullanilir.
 
 `push` ve `pull` degismeyen dosyalari atlar: once boyut, sonra md5/sha256 karsilastirir. `skip-hash = yes` aciksa boyut eslesmesinden sonra hash kontrolu yapilmaz.
+`push` bos local dosyalari da atlar ve `Skipped empty` yazar.
 
 Tek komut icin hash olmadan hizli modu acin:
 

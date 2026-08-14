@@ -2794,6 +2794,11 @@ def yd_batch_upload(options, local_dir, remote_dir, sync_config = None):
             if not yd_sync_allowed(sync_config, rel_filter_path, file):
                 continue
 
+            if os.path.getsize(local_file) == 0:
+                yd_print("Skipped empty: {0}".format(rel_file_path))
+                skipped_count += 1
+                continue
+
             remote_file_path = yd_remote_path(remote_dir + "/" + rel_file_path.replace("\\", "/"))
             
             try:
