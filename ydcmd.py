@@ -3077,29 +3077,15 @@ def yd_find_cmd(options, args):
             nonlocal found_count
             try:
                 files = yd_list(options, yd_remote_path(path))
-                for file_info in files:
-                    # file_info может быть строкой или объектом
-                    if isinstance(file_info, str):
-                        filename = os.path.basename(file_info)
-                        filepath = file_info
-                    else:
-                        filename = file_info.name
-                        filepath = file_info.path
-                    
-                    if fnmatch.fnmatch(filename.lower(), pattern.lower()):
-                        yd_print("  {0} ({1})".format(filepath, yd_human(file_info.size) if hasattr(file_info, 'size') else "unknown"))
+                for file_info in listvalues(files):
+                    filename = file_info.name
+                    filepath = file_info.path
+
+                    if file_info.isfile() and fnmatch.fnmatch(filename.lower(), pattern.lower()):
+                        yd_print("  {0} ({1})".format(filepath, yd_human(file_info.size)))
                         found_count += 1
-                    
-                    # Рекурсивно ищем в поддиректориях
-                    if isinstance(file_info, str):
-                        # Если это строка, проверяем, является ли она директорией
-                        try:
-                            stat_info = yd_stat(options, yd_remote_path(file_info))
-                            if stat_info.get("type") == "dir":
-                                search_recursive(file_info)
-                        except:
-                            pass
-                    elif hasattr(file_info, 'type') and file_info.type == "dir":
+
+                    if file_info.isdir():
                         search_recursive(filepath)
             except ydError:
                 pass  # Игнорируем ошибки доступа к директориям
